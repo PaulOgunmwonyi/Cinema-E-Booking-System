@@ -1,3 +1,151 @@
 @import "tailwindcss";
 
+/* University of Georgia Color Scheme - Correct Colors */
+:root {
+  --uga-red: #BA0C2F;
+  --uga-black: #000000;
+  --uga-white: #FFFFFF;
+  --uga-silver: #A4A4A4;
+  --uga-arch-black: #2C2C2C;
+  --glass-bg-red: rgba(186, 12, 47, 0.1);
+  --glass-bg-white: rgba(255, 255, 255, 0.15);
+  --glass-bg-light: rgba(255, 255, 255, 0.25);
+  --glass-border-red: rgba(186, 12, 47, 0.4);
+  --glass-border-white: rgba(255, 255, 255, 0.4);
+  --glass-shadow-light: 0 8px 32px 0 rgba(255, 255, 255, 0.1);
+  --glass-shadow-red: 0 8px 32px 0 rgba(186, 12, 47, 0.2);
+}
 
+/* Custom Tailwind classes for UGA colors */
+.bg-uga-red { background-color: var(--uga-red); }
+.bg-uga-black { background-color: var(--uga-black); }
+.bg-uga-white { background-color: var(--uga-white); }
+.bg-uga-silver { background-color: var(--uga-silver); }
+.bg-uga-arch-black { background-color: var(--uga-arch-black); }
+
+.text-uga-red { color: var(--uga-red); }
+.text-uga-black { color: var(--uga-black); }
+.text-uga-white { color: var(--uga-white); }
+.text-uga-silver { color: var(--uga-silver); }
+.text-uga-arch-black { color: var(--uga-arch-black); }
+
+.border-uga-red { border-color: var(--uga-red); }
+.border-uga-black { border-color: var(--uga-black); }
+.border-uga-white { border-color: var(--uga-white); }
+.border-uga-silver { border-color: var(--uga-silver); }
+.border-uga-arch-black { border-color: var(--uga-arch-black); }
+
+.ring-uga-red { --tw-ring-color: var(--uga-red); }
+.ring-uga-white { --tw-ring-color: var(--uga-white); }
+
+/* UGA Liquid Glass Morphism Styles - Lighter Theme */
+.glass-morphism {
+  background: var(--glass-bg-white);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border-white);
+  box-shadow: var(--glass-shadow-light);
+}
+
+.glass-card {
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--glass-border-white);
+  box-shadow: var(--glass-shadow-light), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+}
+
+.glass-button {
+  background: var(--glass-bg-white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border-white);
+  transition: all 0.3s ease;
+}
+
+.glass-button:hover {
+  background: var(--glass-bg-light);
+  border-color: var(--glass-border-red);
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-red);
+}
+
+.glass-input {
+  background: var(--glass-bg-white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border-white);
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  background: var(--glass-bg-light);
+  border-color: var(--glass-border-red);
+  box-shadow: 0 0 20px rgba(186, 12, 47, 0.3);
+}
+
+/* UGA themed background - Very slightly darker */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: linear-gradient(135deg, var(--uga-red) 0%, rgba(186, 12, 47, 0.9) 40%, rgba(255, 255, 255, 0.1) 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.16) 0%, transparent 40%),
+    radial-gradient(circle at 80% 60%, rgba(186, 12, 47, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 60% 30%, rgba(255, 255, 255, 0.06) 0%, transparent 30%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Smooth transitions for interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Custom scrollbar with lighter UGA colors */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(186, 12, 47, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(186, 12, 47, 0.6);
+}
+
+/* Additional glass variants for different lightness levels */
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+}
+
+.glass-header {
+  background: var(--uga-red);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
