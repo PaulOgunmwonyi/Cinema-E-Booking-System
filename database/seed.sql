@@ -5,7 +5,7 @@ INSERT INTO genres (name) VALUES
   ('Action'),
   ('Comedy'),
   ('Drama'),
-  ('Sci-Fi')
+  ('Sci-Fi');
 
 -- =========================
 -- Movies
@@ -19,7 +19,7 @@ VALUES
  'https://example.com/inception.jpg', 'https://www.youtube.com/embed/YoHD9XEInc0', '2010-07-16'),
 
 ('The Dark Knight', 'Batman faces the Joker in Gotham City.', 152, 'PG-13', 'Christopher Nolan', 'Charles Roven',
- 'https://example.com/dark_knight.jpg', 'https://www.youtube.com/embed/EXeTwQWrcwY', '2008-07-18')
+ 'https://example.com/dark_knight.jpg', 'https://www.youtube.com/embed/EXeTwQWrcwY', '2008-07-18');
 
 -- =========================
 -- Map Movies to Genres
@@ -37,7 +37,7 @@ SELECT id, (SELECT id FROM genres WHERE name = 'Action') FROM movies WHERE title
 -- Halls
 -- =========================
 INSERT INTO halls (name, description) VALUES
-  ('Main Hall', 'Primary auditorium with 200 seats')
+  ('Main Hall', 'Primary auditorium with 200 seats');
 
 -- =========================
 -- Shows
