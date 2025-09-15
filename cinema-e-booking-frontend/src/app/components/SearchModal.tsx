@@ -149,7 +149,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
           {/* Date Input */}
           <div>
             <label className="block text-sm font-medium text-black/90 mb-2">
-              Release Date
+              Show Date
             </label>
             <input
               type="date"
@@ -172,7 +172,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
             onClick={handleApplyFilters}
             className="flex-1 px-4 py-2 bg-uga-red/80 text-black rounded-lg hover:bg-uga-red font-medium shadow-lg backdrop-blur-sm border border-uga-white/20"
           >
-            Apply Filters
+            Search
           </button>
         </div>
       </div>
