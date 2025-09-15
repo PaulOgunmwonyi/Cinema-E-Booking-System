@@ -8,6 +8,8 @@ import SearchModal from './SearchModal';
 const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [genre, setGenre] = useState('');
+  const [date, setDate] = useState('');
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
@@ -23,8 +25,24 @@ const Header = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      handleSearch(searchQuery);
+      handleSearch(searchQuery, { genre, date });
     }
+  };
+
+  const handleApplyFilters = (query: string, filters?: { genre: string; date: string }) => {
+    // Update the states with the filter values
+    setSearchQuery(query);
+    if (filters) {
+      setGenre(filters.genre);
+      setDate(filters.date);
+    }
+    handleSearch(query, filters);
+  };
+
+  const handleResetFilters = () => {
+    setGenre('');
+    setDate('');
+    setSearchQuery('');
   };
 
   return (
@@ -80,8 +98,15 @@ const Header = () => {
       <SearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onApplyFilters={handleSearch}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
         triggerElement={filterButtonRef.current}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        genre={genre}
+        setGenre={setGenre}
+        date={date}
+        setDate={setDate}
       />
     </>
   );

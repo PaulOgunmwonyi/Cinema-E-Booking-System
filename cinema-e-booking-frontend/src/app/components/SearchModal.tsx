@@ -1,18 +1,33 @@
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyFilters: (query: string, filters?: { genre: string; date: string }) => void;
+  onResetFilters: () => void;
   triggerElement: HTMLElement | null;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  genre: string;
+  setGenre: (genre: string) => void;
+  date: string;
+  setDate: (date: string) => void;
 }
 
-const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onApplyFilters, triggerElement }) => {
-  const [genre, setGenre] = useState('');
-  const [date, setDate] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+const SearchModal: React.FC<SearchModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onApplyFilters, 
+  onResetFilters,
+  triggerElement,
+  searchQuery,
+  setSearchQuery,
+  genre,
+  setGenre,
+  date,
+  setDate
+}) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -70,9 +85,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onApplyFilte
   };
 
   const handleReset = () => {
-    setGenre('');
-    setDate('');
-    setSearchQuery('');
+    onResetFilters();
   };
 
   if (!isOpen) return null;
@@ -90,10 +103,10 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onApplyFilte
     >
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-uga-white drop-shadow-lg">Search Filters</h2>
+          <h2 className="text-xl font-bold text-black drop-shadow-lg">Search Filters</h2>
           <button
             onClick={onClose}
-            className="text-uga-white/70 hover:text-uga-white transition-colors duration-200 text-xl font-bold hover:rotate-90 transform"
+            className="text-black/70 hover:text-black transition-colors duration-200 text-xl font-bold hover:rotate-90 transform"
           >
             ×
           </button>
@@ -102,7 +115,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onApplyFilte
         <div className="space-y-4">
           {/* Search Query */}
           <div>
-            <label className="block text-sm font-medium text-uga-white/90 mb-2">
+            <label className="block text-sm font-medium text-black/90 mb-2">
               Search Term
             </label>
             <input
@@ -110,19 +123,19 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onApplyFilte
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Enter movie title..."
-              className="glass-input w-full px-4 py-2 rounded-lg text-uga-white placeholder-uga-white/60 focus:outline-none focus:ring-2 focus:ring-uga-white/50"
+              className="glass-input w-full px-4 py-2 rounded-lg text-black placeholder-black/60 focus:outline-none focus:ring-2 focus:ring-uga-white/50"
             />
           </div>
 
           {/* Genre Dropdown */}
           <div>
-            <label className="block text-sm font-medium text-uga-white/90 mb-2">
+            <label className="block text-sm font-medium text-black/90 mb-2">
               Genre
             </label>
             <select
               value={genre}
               onChange={(e) => setGenre(e.target.value)}
-              className="glass-input w-full px-4 py-2 rounded-lg text-uga-white focus:outline-none focus:ring-2 focus:ring-uga-white/50"
+              className="glass-input w-full px-4 py-2 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-uga-white/50"
             >
               <option value="" className="bg-uga-arch-black text-uga-white">All Genres</option>
               {genres.map((g) => (
@@ -135,14 +148,14 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onApplyFilte
 
           {/* Date Input */}
           <div>
-            <label className="block text-sm font-medium text-uga-white/90 mb-2">
+            <label className="block text-sm font-medium text-black/90 mb-2">
               Release Date
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="glass-input w-full px-4 py-2 rounded-lg text-uga-white focus:outline-none focus:ring-2 focus:ring-uga-white/50"
+              className="glass-input w-full px-4 py-2 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-uga-white/50"
             />
           </div>
         </div>
@@ -151,13 +164,13 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onApplyFilte
         <div className="flex space-x-3 mt-6">
           <button
             onClick={handleReset}
-            className="flex-1 glass-button px-4 py-2 text-uga-white/80 rounded-lg hover:text-uga-white font-medium"
+            className="flex-1 glass-button px-4 py-2 text-black/80 rounded-lg hover:text-black font-medium"
           >
             Reset
           </button>
           <button
             onClick={handleApplyFilters}
-            className="flex-1 px-4 py-2 bg-uga-red/80 text-uga-white rounded-lg hover:bg-uga-red font-medium shadow-lg backdrop-blur-sm border border-uga-white/20"
+            className="flex-1 px-4 py-2 bg-uga-red/80 text-black rounded-lg hover:bg-uga-red font-medium shadow-lg backdrop-blur-sm border border-uga-white/20"
           >
             Apply Filters
           </button>
