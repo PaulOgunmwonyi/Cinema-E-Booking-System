@@ -1,8 +1,8 @@
 'use client';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Suspense } from 'react';
-import { mockMovies } from '@/app/data/mockData';
+import { Suspense, useState, useEffect } from 'react';
 import SearchResults from '@/app/components/MovieResults';
+import { Movie, apiService } from '../../utils/api';
 
 function SearchResultsContent() {
   const searchParams = useSearchParams();
@@ -11,12 +11,33 @@ function SearchResultsContent() {
   const genre = searchParams.get('genre') || '';
   const date = searchParams.get('date') || '';
 
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const allMovies = await apiService.getMovies();
+        setMovies(allMovies);
+      } catch (err) {
+        setError('Failed to load movies. Please make sure the backend is running on http://localhost:5000');
+        console.error('Error fetching movies:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMovies();
+  }, []);
+
   // Filter movies based on search parameters
-  const filteredMovies = mockMovies.filter(movie => {
+  const filteredMovies = movies.filter(movie => {
     const matchesQuery = !query || movie.title.toLowerCase().includes(query.toLowerCase());
-    const matchesGenre = !genre || movie.genre.toLowerCase() === genre.toLowerCase();
-    const matchesDate = !date || movie.showDates.includes(date);
-    
+    const matchesGenre = !genre || movie.Genres.name.toLowerCase() === genre.toLowerCase();
+    const matchesDate = !date || movie.Shows.some(s => s.show_date === date);
     return matchesQuery && matchesGenre && matchesDate;
   });
 
@@ -30,8 +51,46 @@ function SearchResultsContent() {
   };
 
   const handleClearSearch = () => {
-    router.push('/');
+    router.push('/pages/searchResults');
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading movies...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <p className="font-bold">Error loading movies</p>
+          <p>{error}</p>
+        </div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (filteredMovies.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 text-lg">
+          {query || genre !== 'All' 
+            ? 'No movies found matching your criteria.' 
+            : 'No movies available.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
