@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { Genre, apiService } from '../utils/api';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -29,20 +30,38 @@ const SearchModal: React.FC<SearchModalProps> = ({
   setDate
 }) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [loadingGenres, setLoadingGenres] = useState(true);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const genres = [
-    'Action',
-    'Adventure',
-    'Comedy',
-    'Drama',
-    'Horror',
-    'Romance',
-    'Sci-Fi',
-    'Thriller',
-    'Animation',
-    'Documentary'
-  ];
+  // Fetch genres from API
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const genreData = await apiService.getGenres();
+        setGenres(genreData);
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+        // Fallback to hardcoded genres if API fails
+        setGenres([
+          { id: '1', name: 'Action' },
+          { id: '2', name: 'Adventure' },
+          { id: '3', name: 'Comedy' },
+          { id: '4', name: 'Drama' },
+          { id: '5', name: 'Horror' },
+          { id: '6', name: 'Romance' },
+          { id: '7', name: 'Sci-Fi' },
+          { id: '8', name: 'Thriller' },
+          { id: '9', name: 'Animation' },
+          { id: '10', name: 'Documentary' }
+        ]);
+      } finally {
+        setLoadingGenres(false);
+      }
+    };
+
+    fetchGenres();
+  }, []);
 
   useEffect(() => {
     if (isOpen && triggerElement) {
@@ -132,18 +151,24 @@ const SearchModal: React.FC<SearchModalProps> = ({
             <label className="block text-sm font-medium text-black/90 mb-2">
               Genre
             </label>
-            <select
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              className="glass-input w-full px-4 py-2 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-uga-white/50"
-            >
-              <option value="" className="bg-uga-arch-black text-uga-white">All Genres</option>
-              {genres.map((g) => (
-                <option key={g} value={g} className="bg-uga-arch-black text-uga-white">
-                  {g}
-                </option>
-              ))}
-            </select>
+            {loadingGenres ? (
+              <div className="glass-input w-full px-4 py-2 rounded-lg text-black/50">
+                Loading genres...
+              </div>
+            ) : (
+              <select
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                className="glass-input w-full px-4 py-2 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-uga-white/50"
+              >
+                <option value="" className="bg-uga-arch-black text-uga-white">All Genres</option>
+                {genres.map((g) => (
+                  <option key={g.id} value={g.name} className="bg-uga-arch-black text-uga-white">
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Date Input */}
