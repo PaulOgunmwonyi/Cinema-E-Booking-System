@@ -10,6 +10,7 @@ interface Movie {
   rating?: number;
   trailerUrl: string;
   comingSoon?: boolean;
+  showtimes?: string[];
 }
 
 const nowPlaying: Movie[] = [
@@ -18,56 +19,64 @@ const nowPlaying: Movie[] = [
     title: "The Dark Knight",
     poster: "/api/placeholder/300/450",
     rating: 9.0,
-    trailerUrl: "https://www.youtube.com/embed/EXeTwQWrcwY"
+    trailerUrl: "https://www.youtube.com/embed/EXeTwQWrcwY",
+    showtimes: ["2:00 PM", "5:00 PM", "8:00 PM"]
   },
   {
     id: 2,
     title: "Inception",
     poster: "/api/placeholder/300/450",
     rating: 8.8,
-    trailerUrl: "https://www.youtube.com/embed/YoHD9XEInc0"
+    trailerUrl: "https://www.youtube.com/embed/YoHD9XEInc0",
+    showtimes: ["1:30 PM", "4:30 PM", "7:30 PM"]
   },
   {
     id: 3,
     title: "The Shawshank Redemption",
     poster: "/api/placeholder/300/450",
     rating: 9.3,
-    trailerUrl: "https://www.youtube.com/embed/6hB3S9bIaco"
+    trailerUrl: "https://www.youtube.com/embed/6hB3S9bIaco",
+    showtimes: ["12:00 PM", "3:00 PM", "6:00 PM"]
   },
   {
     id: 4,
     title: "Pulp Fiction",
     poster: "/api/placeholder/300/450",
     rating: 8.9,
-    trailerUrl: "https://www.youtube.com/embed/s7EdQ4FqbhY"
+    trailerUrl: "https://www.youtube.com/embed/s7EdQ4FqbhY",
+    showtimes: ["2:15 PM", "5:15 PM", "8:15 PM"]
   },
   {
     id: 5,
     title: "Spider-Man: Across the Spider-Verse",
     poster: "/api/placeholder/300/450",
     rating: 8.7,
-    trailerUrl: "https://www.youtube.com/embed/cqGjhVJWtEg"
+    trailerUrl: "https://www.youtube.com/embed/cqGjhVJWtEg",
+    showtimes: ["1:00 PM", "4:00 PM", "7:00 PM"]
   },
   {
     id: 6,
     title: "Inside Out 2",
     poster: "/api/placeholder/300/450",
     rating: 8.1,
-    trailerUrl: "https://www.youtube.com/embed/LEjhY15eCx0"
+    trailerUrl: "https://www.youtube.com/embed/LEjhY15eCx0",
+    showtimes: ["12:30 PM", "3:30 PM", "6:30 PM"]
   },
   {
     id: 7,
     title: "Oppenheimer",
     poster: "/api/placeholder/300/450",
     rating: 8.6,
-    trailerUrl: "https://www.youtube.com/embed/uYPbbksJxIg"
+    trailerUrl: "https://www.youtube.com/embed/uYPbbksJxIg",
+    showtimes: ["2:45 PM", "5:45 PM", "8:45 PM"]
   },
   {
     id: 8,
     title: "Barbie",
     poster: "/api/placeholder/300/450",
     rating: 7.5,
-    trailerUrl: "https://www.youtube.com/embed/pBk4NYhWNMM"
+    trailerUrl: "https://www.youtube.com/embed/pBk4NYhWNMM",
+    showtimes: ["1:15 PM", "4:15 PM", "7:15 PM"]
   }
 ];
 
@@ -76,49 +85,57 @@ const comingSoon: Movie[] = [
     id: 9,
     title: "Dune: Part Two",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/Way9Dexny3w"
+    trailerUrl: "https://www.youtube.com/embed/Way9Dexny3w",
+    showtimes: ["Coming Soon"]
   },
   {
     id: 10,
     title: "Avatar 3",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/a8Gx8wiNbs8"
+    trailerUrl: "https://www.youtube.com/embed/a8Gx8wiNbs8",
+    showtimes: ["Coming Soon"]
   },
   {
     id: 11,
     title: "Deadpool 3",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/7TavVZMewpY"
+    trailerUrl: "https://www.youtube.com/embed/7TavVZMewpY",
+    showtimes: ["Coming Soon"]
   },
   {
     id: 12,
     title: "Fantastic Four",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/AAgnQdiZFsQ"
+    trailerUrl: "https://www.youtube.com/embed/AAgnQdiZFsQ",
+    showtimes: ["Coming Soon"]
   },
   {
     id: 13,
     title: "Mission: Impossible – Dead Reckoning Part Two",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/avz06PDqDbM"
+    trailerUrl: "https://www.youtube.com/embed/avz06PDqDbM",
+    showtimes: ["Coming Soon"]
   },
   {
     id: 14,
     title: "The Marvels",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/wS_qbDztgVY"
+    trailerUrl: "https://www.youtube.com/embed/wS_qbDztgVY",
+    showtimes: ["Coming Soon"]
   },
   {
     id: 15,
     title: "Gladiator 2",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/owK1qxDselE"
+    trailerUrl: "https://www.youtube.com/embed/owK1qxDselE",
+    showtimes: ["Coming Soon"]
   },
   {
     id: 16,
     title: "Kung Fu Panda 4",
     poster: "/api/placeholder/300/450",
-    trailerUrl: "https://www.youtube.com/embed/_inKs4eeHiI"
+    trailerUrl: "https://www.youtube.com/embed/_inKs4eeHiI",
+    showtimes: ["Coming Soon"]
   }
 ];
 
@@ -186,6 +203,16 @@ function MovieGrid({ movies, showRating }: { movies: Movie[]; showRating: boolea
               >
                 Watch Trailer
               </button>
+              <div className="flex flex-wrap justify-center gap-2 mt-2">
+                {movie.showtimes?.map((show, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-uga-white/10 text-uga-white px-2 py-1 rounded text-xs border border-uga-white/20"
+                  >
+                    {show}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         ))}
