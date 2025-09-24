@@ -16,7 +16,7 @@ export interface Movie {
   title: string;
   synopsis: string; 
   duration: number;
-  rating: string;
+  mpaa_rating: string;
   release_date: string;
   poster_url: string;
   trailer_url?: string;
