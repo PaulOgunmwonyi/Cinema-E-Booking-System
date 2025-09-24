@@ -48,14 +48,6 @@
 }
 
 .glass-card {
-<<<<<<< HEAD
-  background: var(--glass-bg-light);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid var(--glass-border-white);
-  box-shadow: var(--glass-shadow-light), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
-=======
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
@@ -78,7 +70,6 @@
     0 12px 40px 0 rgba(255, 255, 255, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transform: translateY(-2px);
->>>>>>> main
 }
 
 .glass-button {
@@ -110,40 +101,14 @@
   box-shadow: 0 0 20px rgba(186, 12, 47, 0.3);
 }
 
-<<<<<<< HEAD
-/* UGA themed background - Very slightly darker */
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background: linear-gradient(135deg, var(--uga-red) 0%, rgba(186, 12, 47, 0.9) 40%, rgba(255, 255, 255, 0.1) 100%);
-=======
 /* UGA themed background - Light red constant color */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   background: #ffc3cb;
->>>>>>> main
   min-height: 100vh;
   position: relative;
 }
 
-<<<<<<< HEAD
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: 
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.16) 0%, transparent 40%),
-    radial-gradient(circle at 80% 60%, rgba(186, 12, 47, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
-    radial-gradient(circle at 60% 30%, rgba(255, 255, 255, 0.06) 0%, transparent 30%);
-  pointer-events: none;
-  z-index: -1;
-}
-
-=======
->>>>>>> main
 /* Smooth transitions for interactive elements */
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
@@ -151,27 +116,6 @@ body::before {
   transition-duration: 300ms;
 }
 
-<<<<<<< HEAD
-/* Custom scrollbar with lighter UGA colors */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(186, 12, 47, 0.4);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(186, 12, 47, 0.6);
-}
-
-=======
->>>>>>> main
 /* Additional glass variants for different lightness levels */
 .glass-card-light {
   background: rgba(255, 255, 255, 0.3);

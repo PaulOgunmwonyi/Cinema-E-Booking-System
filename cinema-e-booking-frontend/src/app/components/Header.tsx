@@ -1,8 +1,4 @@
 'use client';
-<<<<<<< HEAD
-
-=======
->>>>>>> main
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,11 +7,8 @@ import SearchModal from './SearchModal';
 const Header = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-<<<<<<< HEAD
-=======
   const [genre, setGenre] = useState('');
   const [date, setDate] = useState('');
->>>>>>> main
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
@@ -31,12 +24,6 @@ const Header = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-<<<<<<< HEAD
-      handleSearch(searchQuery);
-    }
-  };
-
-=======
       handleSearch(searchQuery, { genre, date });
     }
   };
@@ -57,7 +44,6 @@ const Header = () => {
     setSearchQuery('');
   };
 
->>>>>>> main
   return (
     <>
       <header className="glass-header border-b border-uga-white/30 sticky top-0 z-40">
@@ -111,10 +97,6 @@ const Header = () => {
       <SearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-<<<<<<< HEAD
-        onApplyFilters={handleSearch}
-        triggerElement={filterButtonRef.current}
-=======
         onApplyFilters={handleApplyFilters}
         onResetFilters={handleResetFilters}
         triggerElement={filterButtonRef.current}
@@ -124,7 +106,6 @@ const Header = () => {
         setGenre={setGenre}
         date={date}
         setDate={setDate}
->>>>>>> main
       />
     </>
   );
