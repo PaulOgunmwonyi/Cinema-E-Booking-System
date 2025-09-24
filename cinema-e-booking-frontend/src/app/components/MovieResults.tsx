@@ -14,6 +14,29 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const bookingButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Helper function to get rating display styles based on MPAA rating
+  const getRatingStyles = (rating: string) => {
+    const upperRating = rating?.toUpperCase() || 'NR';
+    
+    switch (upperRating) {
+      case 'G':
+        return 'bg-green-600/80 text-white border-green-400/30';
+      case 'PG':
+        return 'bg-blue-600/80 text-white border-blue-400/30';
+      case 'PG-13':
+        return 'bg-yellow-600/80 text-white border-yellow-400/30';
+      case 'R':
+        return 'bg-red-600/80 text-white border-red-400/30';
+      case 'NC-17':
+        return 'bg-purple-600/80 text-white border-purple-400/30';
+      case 'NR':
+      case 'NOT RATED':
+        return 'bg-gray-600/80 text-white border-gray-400/30';
+      default:
+        return 'bg-uga-red/80 text-uga-white border-uga-white/20';
+    }
+  };
+
   // Helper function to extract date from start_time timestamp
   const extractDate = (startTime: string) => {
     if (!startTime) return null;
@@ -138,7 +161,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
         return (
           <div key={movie.id} className="glass-card overflow-hidden hover:scale-[1.02] transition-transform duration-300">
             <div className="flex flex-col sm:flex-row">
-              {/* Movie Poster - Fixed missing opening div */}
+              {/* Movie Poster */}
               <div className="w-full sm:w-32 h-48 sm:h-48 bg-gradient-to-br from-uga-red/20 to-uga-black/40 relative flex-shrink-0">
                 {movie.poster_url ? (
                   <Image
@@ -152,8 +175,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
                   />
                 ) : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">
-                  <span className="bg-uga-red/80 text-uga-white px-3 py-1 rounded-full text-sm font-bold backdrop-blur-sm border border-uga-white/20">
-                    ★ {movie.rating || 'NR'}
+                  {/* Updated rating display with MPAA rating styles */}
+                  <span className={`px-3 py-1 rounded-full text-sm font-bold backdrop-blur-sm border ${getRatingStyles(movie.mpaa_rating)}`}>
+                    {movie.mpaa_rating?.toUpperCase() || 'NR'}
                   </span>
                 </div>
               </div>

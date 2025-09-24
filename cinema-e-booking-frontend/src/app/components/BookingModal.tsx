@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Movie } from '../utils/api';
+import { Movie, Show } from '../utils/api';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -24,36 +24,132 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Group shows by date
+  // Helper function to extract date from start_time timestamp (copied from MovieResults)
+  const extractDate = (startTime: string) => {
+    if (!startTime) return null;
+    try {
+      const date = new Date(startTime);
+      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+    } catch (error) {
+      console.error('Error parsing date:', error);
+      return null;
+    }
+  };
+
+  // Helper function to extract time from start_time timestamp (copied from MovieResults)
+  const extractTime = (startTime: string) => {
+    if (!startTime) return null;
+    try {
+      const date = new Date(startTime);
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Error parsing time:', error);
+      return null;
+    }
+  };
+
+  // Format date for display (copied from MovieResults)
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString || typeof dateString !== 'string') {
+      return 'Date unavailable';
+    }
+
+    try {
+      const [year, month, day] = dateString.split('-').map(Number);
+      
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        return 'Invalid date';
+      }
+
+      const date = new Date(year, month - 1, day);
+      
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, 'dateString:', dateString);
+      return 'Date unavailable';
+    }
+  };
+
+  // Get unique dates from shows using start_time (copied from MovieResults)
+  const getUniqueDates = (shows: Show[]) => {
+    if (!shows || !Array.isArray(shows)) return [];
+    
+    const uniqueDates = new Set();
+    const validShows = shows.filter(show => show && show.start_time);
+    
+    validShows.forEach(show => {
+      const showDate = extractDate(show.start_time);
+      if (showDate) {
+        uniqueDates.add(showDate);
+      }
+    });
+    
+    return Array.from(uniqueDates) as string[];
+  };
+
+  // Filter shows for selected date using start_time (copied from MovieResults)
+  const getShowsForDate = (shows: Show[], date: string) => {
+    if (!shows || !Array.isArray(shows) || !date) return [];
+    
+    return shows.filter(show => {
+      if (!show || !show.start_time) return false;
+      const showDate = extractDate(show.start_time);
+      return showDate === date;
+    });
+  };
+
+  // Group shows by date using the same logic as MovieResults
   const showsByDate = useMemo(() => {
-    const grouped: { [date: string]: typeof movie.Shows } = {};
+    const grouped: { [date: string]: Show[] } = {};
+    
+    if (!movie.Shows || !Array.isArray(movie.Shows)) return grouped;
     
     movie.Shows.forEach(show => {
-      const date = show.show_date;
-      if (!grouped[date]) {
-        grouped[date] = [];
+      if (show && show.start_time) {
+        const date = extractDate(show.start_time);
+        if (date) {
+          if (!grouped[date]) {
+            grouped[date] = [];
+          }
+          grouped[date].push(show);
+        }
       }
-      grouped[date].push(show);
     });
     
     // Sort shows by time for each date
     Object.keys(grouped).forEach(date => {
-      grouped[date].sort((a, b) => a.show_time.localeCompare(b.show_time));
+      grouped[date].sort((a, b) => {
+        const timeA = extractTime(a.start_time) || '';
+        const timeB = extractTime(b.start_time) || '';
+        return timeA.localeCompare(timeB);
+      });
     });
     
     return grouped;
-  }, [movie, movie.Shows]);
+  }, [movie.Shows]);
 
   const availableDates = Object.keys(showsByDate).sort();
-  const availableShows = selectedDate ? showsByDate[selectedDate] : [];
+  const availableShows = currSelectedDate ? showsByDate[currSelectedDate] || [] : [];
 
   const handleBookTickets = () => {
-    if (!selectedDate || !selectedShow) {
+    if (!currSelectedDate || !selectedShow) {
       alert('Please select both a date and show time');
       return;
     }
 
-    const selectedShowData = movie.Shows.find(show => show.id === selectedShow);
+    const selectedShowData = movie.Shows?.find(show => show.id === selectedShow);
     
     // Navigate to booking page with movie and show details
     const queryParams = new URLSearchParams({
@@ -61,31 +157,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
       movieTitle: movie.title,
       showDate: currSelectedDate,
       showId: selectedShow,
-      showTime: selectedShowData?.show_time || '',
-      price: selectedShowData?.price.toString() || '0'
+      showTime: selectedShowData?.start_time ? extractTime(selectedShowData.start_time) || '' : '',
     });
 
     router.push(`/pages/booking?${queryParams.toString()}`);
     onClose();
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  // Format time for display
-  const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
   };
 
   useEffect(() => {
@@ -131,88 +207,100 @@ const BookingModal: React.FC<BookingModalProps> = ({
         }}
       >
         <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-black drop-shadow-lg">Book Tickets</h2>
-          <button
-            onClick={onClose}
-            className="text-black/70 hover:text-black transition-colors duration-200 text-xl font-bold hover:rotate-90 transform"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Movie Title */}
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-black">{movie.title}</h3>
-          <p className="text-black/70 text-sm">{movie.Genres.name} • ★ {movie.rating}</p>
-        </div>
-
-        <div className="space-y-4">
-          {/* Date Dropdown */}
-          <div>
-            <label className="block text-sm font-medium text-black/90 mb-2">
-              Select Date
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {availableDates.map((date) => (
-                <button
-                  key={date}
-                  onClick={() => {
-                    setSelectedDate(date);
-                    setSelectedShow(''); // Reset show selection when date changes
-                  }}
-                  className={`p-3 text-sm rounded border ${
-                    selectedDate === date
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
-                  }`}
-                >
-                  {formatDate(date)}
-                </button>
-              ))}
-            </div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-black drop-shadow-lg">Book Tickets</h2>
+            <button
+              onClick={onClose}
+              className="text-black/70 hover:text-black transition-colors duration-200 text-xl font-bold hover:rotate-90 transform"
+            >
+              ×
+            </button>
           </div>
 
-          {/* Show Time Selection */}
-          {selectedDate && (
-            <div className="mb-6">
+          {/* Movie Title */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-black">{movie.title}</h3>
+            <p className="text-black/70 text-sm">
+              {movie.Genres && Array.isArray(movie.Genres) && movie.Genres.length > 0 
+                ? movie.Genres[0].name 
+                : 'Unknown Genre'} 
+              • {movie.mpaa_rating?.toUpperCase() || 'NR'}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {/* Date Selection Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-black/90 mb-2">
+                Select Date
+              </label>
+              {availableDates.length === 0 ? (
+                <div className="glass-input w-full px-4 py-2 rounded-lg text-black/50">
+                  No showtimes available
+                </div>
+              ) : (
+                <select
+                  value={currSelectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setSelectedShow(''); // Reset show selection when date changes
+                  }}
+                  className="glass-input w-full px-4 py-2 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-uga-white/50"
+                >
+                  <option value="" className="bg-uga-arch-black text-uga-white">Select a date</option>
+                  {availableDates.map((date) => (
+                    <option key={date} value={date} className="bg-uga-arch-black text-uga-white">
+                      {formatDate(date)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Show Time Selection Dropdown */}
+            <div>
               <label className="block text-sm font-medium text-black/90 mb-2">
                 Select Show Time
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                {availableShows.map((show) => (
-                  <button
-                    key={show.id}
-                    onClick={() => setSelectedShow(show.id)}
-                    className={`p-3 text-sm rounded border ${
-                      selectedShow === show.id
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
-                    }`}
-                  >
-                    <div>{formatTime(show.show_time)}</div>
-                    <div className="text-xs opacity-75">${show.price}</div>
-                  </button>
-                ))}
-              </div>
+              {!currSelectedDate ? (
+                <div className="glass-input w-full px-4 py-2 rounded-lg text-black/50">
+                  Please select a date first
+                </div>
+              ) : availableShows.length === 0 ? (
+                <div className="glass-input w-full px-4 py-2 rounded-lg text-black/50">
+                  No shows available for this date
+                </div>
+              ) : (
+                <select
+                  value={selectedShow}
+                  onChange={(e) => setSelectedShow(e.target.value)}
+                  className="glass-input w-full px-4 py-2 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-uga-white/50"
+                >
+                  <option value="" className="bg-uga-arch-black text-uga-white">Select a show time</option>
+                  {availableShows.map((show) => (
+                    <option key={show.id} value={show.id} className="bg-uga-arch-black text-uga-white">
+                      {extractTime(show.start_time) || 'Time TBA'}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Book Tickets Button */}
+          {/* Book Tickets Button - Updated to match your design */}
           <div className="mt-6">
             <button
               onClick={handleBookTickets}
-              disabled={!selectedDate || !selectedShow}
-              className={`w-full py-3 px-4 rounded font-medium ${
-                selectedDate && selectedShow
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              disabled={!currSelectedDate || !selectedShow || availableShows.length === 0}
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
+                currSelectedDate && selectedShow && availableShows.length > 0
+                  ? 'glass-button text-black hover:scale-105 border border-black/30 hover:text-black'
+                  : 'bg-black/10 text-black/40 cursor-not-allowed border border-black/10'
               }`}
             >
-              Book Tickets
+              {availableShows.length === 0 ? 'No Shows Available' : 'Book Tickets'}
             </button>
           </div>
-        </div>
         </div>
       </div>
     </>
