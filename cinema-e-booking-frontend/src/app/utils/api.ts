@@ -8,21 +8,19 @@ export interface Genre {
 export interface Show {
   id: string;
   movie_id: string;
-  show_date: string;
-  show_time: string;
-  price: number;
+  start_time: string; 
 }
 
 export interface Movie {
   id: string;
   title: string;
-  description: string;
+  synopsis: string; 
   duration: number;
   rating: string;
   release_date: string;
   poster_url: string;
   trailer_url?: string;
-  Genres: Genre;
+  Genres: Genre[];
   Shows: Show[];
 }
 
