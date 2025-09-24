@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Movie } from '../utils/api';
+import Image from 'next/image';
+import { Show, Movie, Genre } from '../utils/api';
 import BookingModal from './BookingModal';
 
 interface SearchResultsProps {
@@ -12,6 +13,34 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const bookingButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Helper function to extract date from start_time timestamp
+  const extractDate = (startTime: string) => {
+    if (!startTime) return null;
+    try {
+      const date = new Date(startTime);
+      return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+    } catch (error) {
+      console.error('Error parsing date:', error);
+      return null;
+    }
+  };
+
+  // Helper function to extract time from start_time timestamp
+  const extractTime = (startTime: string) => {
+    if (!startTime) return null;
+    try {
+      const date = new Date(startTime);
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Error parsing time:', error);
+      return null;
+    }
+  };
 
   const formatDate = (dateString: string | null | undefined) => {
     // Handle null, undefined, or empty string
@@ -51,25 +80,38 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
     setIsBookingModalOpen(true);
   };
 
-  // Get unique dates from shows, filtering out invalid dates
-  const getUniqueDates = (shows: any[]) => {
+  // Get unique dates from shows using start_time
+  const getUniqueDates = (shows: Show[]) => {
     if (!shows || !Array.isArray(shows)) return [];
     
     const uniqueDates = new Set();
-    const validShows = shows.filter(show => show && show.show_date);
+    const validShows = shows.filter(show => show && show.start_time);
     
     validShows.forEach(show => {
-      uniqueDates.add(show.show_date);
+      const showDate = extractDate(show.start_time);
+      if (showDate) {
+        uniqueDates.add(showDate);
+      }
     });
     
     return Array.from(uniqueDates) as string[];
   };
 
-  // Filter shows for selected date
-  const getShowsForDate = (shows: any[], date: string) => {
+  // Filter shows for selected date using start_time
+  const getShowsForDate = (shows: Show[], date: string) => {
     if (!shows || !Array.isArray(shows) || !date) return [];
     
-    return shows.filter(show => show && show.show_date === date && show.show_time);
+    return shows.filter(show => {
+      if (!show || !show.start_time) return false;
+      const showDate = extractDate(show.start_time);
+      return showDate === date;
+    });
+  };
+
+  // Get show times for a specific date
+  const getShowTimesForDate = (shows: Show[], date: string) => {
+    const showsForDate = getShowsForDate(shows, date);
+    return showsForDate.map(show => extractTime(show.start_time)).filter(time => time !== null);
   };
 
   if (movies.length === 0) {
@@ -90,14 +132,25 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
       {movies.map((movie) => {
         // Safely access movie properties
         const movieShows = movie.Shows || [];
-        const movieGenres = movie.Genres || [];
-        const genreName = Array.isArray(movieGenres) ? movieGenres[0]?.name : movieGenres?.name || 'Unknown';
+        const movieGenres = (movie.Genres ?? []) as { name?: string }[];
+        const genreName = Array.isArray(movieGenres) ? movieGenres[0]?.name ?? 'Unknown' : (movieGenres as Genre)?.name ?? 'Unknown';
 
         return (
           <div key={movie.id} className="glass-card overflow-hidden hover:scale-[1.02] transition-transform duration-300">
             <div className="flex flex-col sm:flex-row">
-              {/* Movie Poster */}
+              {/* Movie Poster - Fixed missing opening div */}
               <div className="w-full sm:w-32 h-48 sm:h-48 bg-gradient-to-br from-uga-red/20 to-uga-black/40 relative flex-shrink-0">
+                {movie.poster_url ? (
+                  <Image
+                    src={movie.poster_url}
+                    alt={movie.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, 32vw"
+                    onError={() => {}}
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">
                   <span className="bg-uga-red/80 text-uga-white px-3 py-1 rounded-full text-sm font-bold backdrop-blur-sm border border-uga-white/20">
                     ★ {movie.rating || 'NR'}
@@ -118,8 +171,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
                       </span>
                     </div>
                     
+                    {/* Display Synopsis */}
                     <p className="text-black/80 text-xs mb-3 line-clamp-2">
-                      {movie.description || 'No description available'}
+                      {movie.synopsis || 'No synopsis available'}
                     </p>
                     
                     {/* Show Dates or Show Times */}
@@ -136,6 +190,11 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
                                 {formatDate(date)}
                               </span>
                             ))}
+                            {getUniqueDates(movieShows).length > 4 && (
+                              <span className="text-xs text-black/60">
+                                +{getUniqueDates(movieShows).length - 4} more
+                              </span>
+                            )}
                             {getUniqueDates(movieShows).length === 0 && (
                               <span className="text-xs text-black/60">No showtimes available</span>
                             )}
@@ -147,15 +206,20 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
                             Show Times for {formatDate(selectedDate)}:
                           </h4>
                           <div className="flex flex-wrap gap-1">
-                            {getShowsForDate(movieShows, selectedDate).slice(0, 4).map((show, index) => (
+                            {getShowTimesForDate(movieShows, selectedDate).slice(0, 4).map((time, index) => (
                               <span 
                                 key={index}
-                                className="bg-uga-red/20 text-black px-2 py-1 rounded-full text-xs border border-uga-red/30"
+                                className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full border border-green-300"
                               >
-                                {show.show_time || 'Time TBA'}
+                                {time}
                               </span>
                             ))}
-                            {getShowsForDate(movieShows, selectedDate).length === 0 && (
+                            {getShowTimesForDate(movieShows, selectedDate).length > 4 && (
+                              <span className="text-xs text-black/60">
+                                +{getShowTimesForDate(movieShows, selectedDate).length - 4} more
+                              </span>
+                            )}
+                            {getShowTimesForDate(movieShows, selectedDate).length === 0 && (
                               <span className="text-xs text-black/60">No shows for this date</span>
                             )}
                           </div>
