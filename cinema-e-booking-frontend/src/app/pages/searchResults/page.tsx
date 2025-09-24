@@ -64,8 +64,7 @@ function SearchResultsContent() {
   // Filter movies based on search parameters with proper null/undefined checks
   const filteredMovies = movies.filter(movie => {
     // Check if movie title exists and matches query
-    const matchesQuery = !query || (movie.title && movie.title.toLowerCase().includes(query.toLowerCase())) ||
-                        (movie.synopsis && movie.synopsis.toLowerCase().includes(query.toLowerCase()));
+    const matchesQuery = !query || (movie.title && movie.title.toLowerCase().includes(query.toLowerCase()));
     
     // Check if movie has genres and any genre matches the selected genre
     const matchesGenre = !genre || (
