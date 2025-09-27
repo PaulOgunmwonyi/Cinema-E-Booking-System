@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { Genre, Movie } = require('../models');
 
-// GET /genres → list all genres
 router.get('/', async (req, res) => {
   try {
     const genres = await Genre.findAll();
@@ -12,7 +11,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /genres/:id/movies → get movies for a genre
 router.get('/:id/movies', async (req, res) => {
   try {
     const genre = await Genre.findByPk(req.params.id, {
