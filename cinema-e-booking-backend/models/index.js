@@ -15,9 +15,6 @@ const sequelize = new Sequelize(
 const db = {};
 db.sequelize = sequelize;
 
-console.log('DB_PASSWORD type:', typeof process.env.DB_PASSWORD, 'value:', process.env.DB_PASSWORD);
-
-
 // Import models
 db.Movie = require('./Movie')(sequelize);
 db.Genre = require('./Genre')(sequelize);
