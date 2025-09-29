@@ -13,13 +13,13 @@ INSERT INTO genres (name) VALUES
 INSERT INTO movies (title, synopsis, duration_minutes, mpaa_rating, director, producer, poster_url, trailer_url, release_date)
 VALUES
 ('Interstellar', 'A team of explorers travel through a wormhole in space...', 169, 'PG-13', 'Christopher Nolan', 'Emma Thomas',
- 'https://example.com/interstellar.jpg', 'https://www.youtube.com/embed/zSWdZVtXT7E', '2014-11-07'),
+ 'https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg', 'https://www.youtube.com/embed/zSWdZVtXT7E', '2014-11-07'),
 
 ('Inception', 'A thief who steals corporate secrets through dream-sharing...', 148, 'PG-13', 'Christopher Nolan', 'Emma Thomas',
- 'https://example.com/inception.jpg', 'https://www.youtube.com/embed/YoHD9XEInc0', '2010-07-16'),
+ 'https://m.media-amazon.com/images/I/81p+xe8cbnL._UF894,1000_QL80_.jpg', 'https://www.youtube.com/embed/YoHD9XEInc0', '2010-07-16'),
 
 ('The Dark Knight', 'Batman faces the Joker in Gotham City.', 152, 'PG-13', 'Christopher Nolan', 'Charles Roven',
- 'https://example.com/dark_knight.jpg', 'https://www.youtube.com/embed/EXeTwQWrcwY', '2008-07-18');
+ 'https://m.media-amazon.com/images/S/pv-target-images/e9a43e647b2ca70e75a3c0af046c4dfdcd712380889779cbdc2c57d94ab63902.jpg', 'https://www.youtube.com/embed/EXeTwQWrcwY', '2008-07-18');
 
 -- =========================
 -- Map Movies to Genres
