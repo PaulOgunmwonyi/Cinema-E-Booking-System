@@ -1,22 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiService, Movie } from '../../utils/api';
+import BookingModal from '../../components/BookingModal';
 
-export default function MovieDetails({ params }: { params: { id: string } }) {
+export default function MovieDetails({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params); 
   const router = useRouter();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Booking modal state
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
+  const bookNowButtonRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
-    apiService.getMovie(params.id)
+    apiService.getMovie(id)
       .then((data) => {
         setMovie(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [params.id]);
+  }, [id]);
+
+  // Helper to extract date from showtime
+  const extractDate = (startTime: string) => {
+    if (!startTime) return null;
+    try {
+      const date = new Date(startTime);
+      return date.toISOString().split('T')[0]; // YYYY-MM-DD
+    } catch {
+      return null;
+    }
+  };
 
   if (loading) {
     return (
@@ -73,12 +92,17 @@ export default function MovieDetails({ params }: { params: { id: string } }) {
             <div className="flex flex-wrap gap-2">
               {movie.Shows && movie.Shows.length > 0 ? (
                 movie.Shows.map((show, idx) => (
-                  <span
+                  <button
                     key={idx}
-                    className="bg-uga-white/10 text-uga-white px-2 py-1 rounded text-xs border border-uga-white/20"
+                    className="bg-uga-white/10 text-uga-white px-2 py-1 rounded text-xs border border-uga-white/20 hover:bg-uga-red/70 hover:text-white transition"
+                    onClick={e => {
+                      setSelectedDate(extractDate(show.start_time) || '');
+                      setIsBookingOpen(true);
+                      setTriggerElement(e.currentTarget as HTMLElement);
+                    }}
                   >
                     {new Date(show.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  </button>
                 ))
               ) : (
                 <span className="bg-gray-700 text-white px-2 py-1 rounded text-xs border border-uga-white/20">
@@ -87,8 +111,21 @@ export default function MovieDetails({ params }: { params: { id: string } }) {
               )}
             </div>
           </div>
+          {movie.Shows && movie.Shows.length > 0 && (
+            <button
+              ref={bookNowButtonRef}
+              className="bg-black hover:bg-gray-800 text-white font-bold px-6 py-2 rounded mt-2 shadow-lg transition-colors duration-200"
+              onClick={e => {
+                setSelectedDate(undefined); // Let user pick date in modal
+                setIsBookingOpen(true);
+                setTriggerElement(bookNowButtonRef.current);
+              }}
+            >
+              Book Now
+            </button>
+          )}
           {movie.trailer_url && (
-            <div>
+            <div className="mt-6">
               <h3 className="font-semibold mb-1">Trailer:</h3>
               <div className="aspect-video w-full max-w-xl">
                 <iframe
@@ -105,6 +142,13 @@ export default function MovieDetails({ params }: { params: { id: string } }) {
           )}
         </div>
       </div>
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        movie={movie}
+        triggerElement={triggerElement}
+        selectedDate={selectedDate}
+      />
     </div>
   );
 }
