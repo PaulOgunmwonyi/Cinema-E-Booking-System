@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiService, Movie } from '../../utils/api';
+import { apiService, Movie, Show } from '../../utils/api';
 import BookingModal from '../../components/BookingModal';
 
 export default function MovieDetails({ params }: { params: Promise<{ id: string }> }) {
@@ -26,15 +26,65 @@ export default function MovieDetails({ params }: { params: Promise<{ id: string 
       .catch(() => setLoading(false));
   }, [id]);
 
-  // Helper to extract date from showtime
+  // --- Date helpers (copied from BookingModal/MovieResults) ---
+
+  // Extract UTC date string (YYYY-MM-DD)
   const extractDate = (startTime: string) => {
     if (!startTime) return null;
     try {
       const date = new Date(startTime);
-      return date.toISOString().split('T')[0]; // YYYY-MM-DD
+      return date.toISOString().split('T')[0];
     } catch {
       return null;
     }
+  };
+
+  // Format date for display (local time)
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString || typeof dateString !== 'string') {
+      return 'Date unavailable';
+    }
+    try {
+      const [year, month, day] = dateString.split('-').map(Number);
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        return 'Invalid date';
+      }
+      const date = new Date(year, month - 1, day);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch {
+      return 'Date unavailable';
+    }
+  };
+
+  // Get unique dates from shows
+  const getUniqueDates = (shows: Show[]) => {
+    if (!shows || !Array.isArray(shows)) return [];
+    const uniqueDates = new Set();
+    const validShows = shows.filter(show => show && show.start_time);
+    validShows.forEach(show => {
+      const showDate = extractDate(show.start_time);
+      if (showDate) {
+        uniqueDates.add(showDate);
+      }
+    });
+    return Array.from(uniqueDates) as string[];
+  };
+
+  // Get shows for selected date
+  const getShowsForDate = (shows: Show[], date: string) => {
+    if (!shows || !Array.isArray(shows) || !date) return [];
+    return shows.filter(show => {
+      if (!show || !show.start_time) return false;
+      const showDate = extractDate(show.start_time);
+      return showDate === date;
+    });
   };
 
   if (loading) {
@@ -58,6 +108,12 @@ export default function MovieDetails({ params }: { params: Promise<{ id: string 
       </div>
     );
   }
+
+  const uniqueDates = movie.Shows ? getUniqueDates(movie.Shows) : [];
+  const showsForSelectedDate =
+    selectedDate && movie.Shows
+      ? getShowsForDate(movie.Shows, selectedDate)
+      : [];
 
   return (
     <div className="container mx-auto px-4 py-8 text-uga-white">
@@ -92,28 +148,53 @@ export default function MovieDetails({ params }: { params: Promise<{ id: string 
           </div>
           <p className="mb-4">{movie.synopsis}</p>
           <div className="mb-4">
-            <h3 className="font-semibold mb-1">Showtimes:</h3>
-            <div className="flex flex-wrap gap-2">
-              {movie.Shows && movie.Shows.length > 0 ? (
-                movie.Shows.map((show, idx) => (
+            <h3 className="font-semibold mb-1">Available Dates:</h3>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {uniqueDates.length > 0 ? (
+                uniqueDates.map(date => (
                   <button
-                    key={idx}
-                    className="bg-uga-white/10 text-uga-white px-2 py-1 rounded text-xs border border-uga-white/20 hover:bg-uga-red/70 hover:text-white transition"
-                    onClick={e => {
-                      setSelectedDate(extractDate(show.start_time) || '');
-                      setIsBookingOpen(true);
-                      setTriggerElement(e.currentTarget as HTMLElement);
-                    }}
+                    key={date}
+                    className={`px-3 py-1 rounded-full border text-sm font-semibold transition-colors duration-150 ${
+                      selectedDate === date
+                        ? 'bg-uga-red/80 text-white border-uga-red'
+                        : 'bg-gray-700 text-white border-gray-500 hover:bg-uga-red/60 hover:text-white'
+                    }`}
+                    onClick={() => setSelectedDate(date)}
                   >
-                    {new Date(show.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatDate(date)}
                   </button>
                 ))
               ) : (
                 <span className="bg-gray-700 text-white px-2 py-1 rounded text-xs border border-uga-white/20">
-                  Coming Soon
+                  No showtimes available
                 </span>
               )}
             </div>
+            {selectedDate && (
+              <>
+                <h3 className="font-semibold mb-1">Showtimes for {formatDate(selectedDate)}:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {showsForSelectedDate.length > 0 ? (
+                    showsForSelectedDate.map((show, idx) => (
+                      <button
+                        key={idx}
+                        className="bg-uga-white/10 text-uga-white px-2 py-1 rounded text-xs border border-uga-white/20 hover:bg-uga-red/70 hover:text-white transition"
+                        onClick={e => {
+                          setIsBookingOpen(true);
+                          setTriggerElement(e.currentTarget as HTMLElement);
+                        }}
+                      >
+                        {new Date(show.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="bg-gray-700 text-white px-2 py-1 rounded text-xs border border-uga-white/20">
+                      No showtimes for this date
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
           {movie.Shows && movie.Shows.length > 0 && (
             <button
