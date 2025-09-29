@@ -111,16 +111,14 @@ export default function Home() {
     });
   }, []);
 
-  const now = new Date();
-
-  // Now Playing: release_date in the past or today
+  // Now Playing: has at least one showtime
   const nowPlaying = movies.filter(
-    (movie) => new Date(movie.release_date) <= now
+    (movie) => Array.isArray(movie.Shows) && movie.Shows.length > 0
   );
 
-  // Coming Soon: release_date in the future
+  // Coming Soon: has no showtimes
   const comingSoon = movies.filter(
-    (movie) => new Date(movie.release_date) > now
+    (movie) => !Array.isArray(movie.Shows) || movie.Shows.length === 0
   );
 
   if (loading) {

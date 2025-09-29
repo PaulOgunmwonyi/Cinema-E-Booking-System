@@ -68,12 +68,16 @@ export default function MovieDetails({ params }: { params: Promise<{ id: string 
         Back to Movies
       </button>
       <div className="flex flex-col md:flex-row gap-8">
-        <img
-          src={movie.poster_url}
-          alt={movie.title}
-          className="w-64 h-auto rounded-lg shadow-lg"
-        />
-        <div>
+        {/* Poster with full width, fixed aspect ratio */}
+        <div className="w-full max-w-[400px] md:w-[400px] aspect-[2/3] flex-shrink-0">
+          <img
+            src={movie.poster_url}
+            alt={movie.title}
+            className="w-full h-full object-cover rounded-lg shadow-lg aspect-[2/3] bg-gray-800"
+            style={{ aspectRatio: '2/3', objectFit: 'cover' }}
+          />
+        </div>
+        <div className="flex-1">
           <h1 className="text-4xl font-bold mb-2">{movie.title}</h1>
           <div className="mb-2">
             {movie.mpaa_rating ? (
