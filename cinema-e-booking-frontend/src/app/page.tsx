@@ -41,6 +41,7 @@ function MovieGrid({
   comingSoon?: boolean;
 }) {
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
+  const [hoveredMovieId, setHoveredMovieId] = useState<string | null>(null);
 
   return (
     <>
@@ -77,9 +78,15 @@ function MovieGrid({
                 </button>
               )}
               {comingSoon ? (
-                <span className="mt-2 bg-gray-700 text-white font-bold px-4 py-2 rounded">
-                  Coming Soon
-                </span>
+                <Link
+                  href={`/movies/${movie.id}`}
+                  className="mt-2 bg-gray-700 text-white font-bold px-4 py-2 rounded hover:scale-105 transition-transform duration-200 text-center"
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)', cursor: 'pointer' }}
+                  onMouseEnter={() => setHoveredMovieId(movie.id)}
+                  onMouseLeave={() => setHoveredMovieId(null)}
+                >
+                  {hoveredMovieId === movie.id ? 'More Info' : 'Coming Soon'}
+                </Link>
               ) : (
                 <Link
                   href={`/movies/${movie.id}`}
