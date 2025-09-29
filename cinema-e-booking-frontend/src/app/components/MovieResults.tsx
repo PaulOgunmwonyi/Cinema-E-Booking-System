@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Show, Movie, Genre } from '../utils/api';
 import BookingModal from './BookingModal';
 
@@ -17,7 +18,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
   // Helper function to get rating display styles based on MPAA rating
   const getRatingStyles = (rating: string) => {
     const upperRating = rating?.toUpperCase() || 'NR';
-    
     switch (upperRating) {
       case 'G':
         return 'bg-green-600/80 text-white border-green-400/30';
@@ -66,27 +66,18 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
   };
 
   const formatDate = (dateString: string | null | undefined) => {
-    // Handle null, undefined, or empty string
     if (!dateString || typeof dateString !== 'string') {
       return 'Date unavailable';
     }
-
     try {
-      // Split the date string and create date with local timezone to avoid UTC offset issues
       const [year, month, day] = dateString.split('-').map(Number);
-      
-      // Validate that we have valid numbers
       if (isNaN(year) || isNaN(month) || isNaN(day)) {
         return 'Invalid date';
       }
-
-      const date = new Date(year, month - 1, day); // month is 0-indexed
-      
-      // Check if date is valid
+      const date = new Date(year, month - 1, day);
       if (isNaN(date.getTime())) {
         return 'Invalid date';
       }
-
       return date.toLocaleDateString('en-US', { 
         weekday: 'short', 
         month: 'short', 
@@ -106,24 +97,20 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
   // Get unique dates from shows using start_time
   const getUniqueDates = (shows: Show[]) => {
     if (!shows || !Array.isArray(shows)) return [];
-    
     const uniqueDates = new Set();
     const validShows = shows.filter(show => show && show.start_time);
-    
     validShows.forEach(show => {
       const showDate = extractDate(show.start_time);
       if (showDate) {
         uniqueDates.add(showDate);
       }
     });
-    
     return Array.from(uniqueDates) as string[];
   };
 
   // Filter shows for selected date using start_time
   const getShowsForDate = (shows: Show[], date: string) => {
     if (!shows || !Array.isArray(shows) || !date) return [];
-    
     return shows.filter(show => {
       if (!show || !show.start_time) return false;
       const showDate = extractDate(show.start_time);
@@ -153,7 +140,6 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {movies.map((movie) => {
-        // Safely access movie properties
         const movieShows = movie.Shows || [];
         const movieGenres = (movie.Genres ?? []) as { name?: string }[];
         const genreName = Array.isArray(movieGenres) ? movieGenres[0]?.name ?? 'Unknown' : (movieGenres as Genre)?.name ?? 'Unknown';
@@ -161,35 +147,37 @@ const SearchResults: React.FC<SearchResultsProps> = ({ movies, selectedDate }) =
         return (
           <div key={movie.id} className="glass-card overflow-hidden hover:scale-[1.02] transition-transform duration-300">
             <div className="flex flex-col sm:flex-row">
-              {/* Movie Poster */}
-              <div className="w-full sm:w-32 h-48 sm:h-48 bg-gradient-to-br from-uga-red/20 to-uga-black/40 relative flex-shrink-0">
+              {/* Movie Poster & Link */}
+              <Link href={`/movies/${movie.id}`} className="w-full sm:w-32 h-48 sm:h-48 bg-gradient-to-br from-uga-red/20 to-uga-black/40 relative flex-shrink-0 block group">
                 {movie.poster_url ? (
                   <Image
                     src={movie.poster_url}
                     alt={movie.title}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:opacity-90"
                     sizes="(max-width: 640px) 100vw, 32vw"
                     onError={() => {}}
                     style={{ objectFit: 'cover' }}
                   />
                 ) : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-4">
-                  {/* Updated rating display with MPAA rating styles */}
                   <span className={`px-3 py-1 rounded-full text-sm font-bold backdrop-blur-sm border ${getRatingStyles(movie.mpaa_rating)}`}>
                     {movie.mpaa_rating?.toUpperCase() || 'NR'}
                   </span>
                 </div>
-              </div>
+              </Link>
               
               {/* Movie Details */}
               <div className="flex-1 p-6">
                 <div className="flex flex-col h-full">
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-bold text-black mb-1 line-clamp-2">
-                        {movie.title || 'Untitled Movie'}
-                      </h3>
+                      {/* Title as Link */}
+                      <Link href={`/movies/${movie.id}`}>
+                        <h3 className="text-lg font-bold text-black mb-1 line-clamp-2 hover:underline">
+                          {movie.title || 'Untitled Movie'}
+                        </h3>
+                      </Link>
                       <span className="bg-uga-red/60 text-black px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm border border-black/30 ml-2 flex-shrink-0">
                         {genreName}
                       </span>
