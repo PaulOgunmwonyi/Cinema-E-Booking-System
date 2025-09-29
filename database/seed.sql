@@ -33,9 +33,9 @@ VALUES
 
 ('Godzilla Minus One', 'In post-war Japan, an already devastated country must confront a new crisis when Godzilla emerges again, bringing massive destruction and despair.', 125, 'PG-13', 'Takashi Yamazaki', 'Toho Studios / Robot Communications', 'https://i.ebayimg.com/images/g/OFwAAOSwieFmHA7e/s-l400.jpg', 'https://www.youtube.com/watch?v=nAYKaslCXPc', '2023-12-01'),
 
-('Ghosted', 'A romantic action comedy in which a secret spy and a reluctant adventurer are forced to team up when their relationship is revealed to have been built on lies and hidden agendas.', 116, 'PG-13', 'Dexter Fletcher', 'David Ellison / Dana Goldberg / Don Granger / Chris Evans / Jules Daly', 'https://filmfare.wwmindia.com/content/2023/jul/heartofstonealiabhatt11689673722.jpg', 'https://www.youtube.com/watch?v=IAdCsNtEuBU', '2023-04-21'),
+('Ghosted', 'A romantic action comedy in which a secret spy and a reluctant adventurer are forced to team up when their relationship is revealed to have been built on lies and hidden agendas.', 116, 'PG-13', 'Dexter Fletcher', 'David Ellison / Dana Goldberg / Don Granger / Chris Evans / Jules Daly', 'https://i.etsystatic.com/56874794/r/il/b50d46/6895130083/il_570xN.6895130083_9p5p.jpg', 'https://www.youtube.com/watch?v=IAdCsNtEuBU', '2023-04-21'),
 
-('Heart of Stone', 'When a mysterious and powerful AI system known as "The Heart" is endangered, global intelligence operative Rachel must embark on a dangerous mission to protect it from falling into wrong hands.', 122, 'PG-13', 'Tom Harper', 'Gal Gadot / Jamie Dornan / Alia Bhatt / Skydance etc.', 'https://upload.wikimedia.org/wikipedia/en/.../Heart_of_Stone_poster.jpg', 'https://www.youtube.com/watch?v=XuDwndGaCFo', '2023-08-11'),
+('Heart of Stone', 'When a mysterious and powerful AI system known as "The Heart" is endangered, global intelligence operative Rachel must embark on a dangerous mission to protect it from falling into wrong hands.', 122, 'PG-13', 'Tom Harper', 'Gal Gadot / Jamie Dornan / Alia Bhatt / Skydance etc.', 'https://filmfare.wwmindia.com/content/2023/jul/heartofstonealiabhatt11689673722.jpg', 'https://www.youtube.com/watch?v=XuDwndGaCFo', '2023-08-11'),
 
 ('Robots', 'A sci-fi romantic comedy based on a short story where an ordinary human falls in love with a humanoid robot, confronting prejudice, identity, and what it means to be alive.', 93, 'PG-13', 'Ant Hines & Casper Christensen', 'Ant Hines / Casper Christensen etc.', 'https://images.static-bluray.com/movies/dvdcovers/276081_medium.jpg', 'https://www.youtube.com/watch?v=fI53zc6ohk4', '2023-05-19'),
 
@@ -134,28 +134,3 @@ SELECT m.id, h.id, '2025-09-24 20:00:00', '2025-09-24 22:02:00'
 FROM movies m, halls h
 WHERE m.title = 'Heart of Stone' AND h.name = 'Main Hall';
 
--- Coming soon 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-05 18:00:00', '2025-10-05 19:33:00'
-FROM movies m, halls h
-WHERE m.title = 'Robots' AND h.name = 'Main Hall';
-
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-10 19:00:00', '2025-10-10 21:14:00'
-FROM movies m, halls h
-WHERE m.title = 'Dungeons & Dragons: Honor Among Thieves' AND h.name = 'Main Hall';
-
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-15 20:00:00', '2025-10-15 22:00:00'
-FROM movies m, halls h
-WHERE m.title = 'Blue Beetle' AND h.name = 'Main Hall';
-
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-20 19:30:00', '2025-10-20 21:21:00'
-FROM movies m, halls h
-WHERE m.title = 'No Hard Feelings' AND h.name = 'Main Hall';
-
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-11-01 19:00:00', '2025-11-01 21:30:00'
-FROM movies m, halls h
-WHERE m.title = 'Partner' AND h.name = 'Main Hall';
