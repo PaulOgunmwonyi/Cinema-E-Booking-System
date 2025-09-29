@@ -4,17 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiService, Movie as ApiMovie } from './utils/api';
 
-function getShowtimes(shows: ApiMovie['Shows']) {
-  // Extract and format up to 3 showtimes for display
-  if (!shows || shows.length === 0) return [];
-  return shows
-    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-    .slice(0, 3)
-    .map(show =>
-      new Date(show.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    );
-}
-
 function TrailerModal({ url, onClose }: { url: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -45,9 +34,11 @@ function TrailerModal({ url, onClose }: { url: string; onClose: () => void }) {
 function MovieGrid({
   movies,
   showRating,
+  comingSoon = false,
 }: {
   movies: ApiMovie[];
   showRating: boolean;
+  comingSoon?: boolean;
 }) {
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
 
@@ -59,16 +50,14 @@ function MovieGrid({
             key={movie.id}
             className="glass-card overflow-hidden group transition-transform duration-200 hover:scale-105"
           >
-            <Link href={`/movies/${movie.id}`} className="block cursor-pointer">
-              <img
-                src={movie.poster_url}
-                alt={movie.title}
-                className="w-full aspect-[2/3] object-cover rounded-t-lg transition-transform group-hover:scale-105"
-              />
-              <h3 className="text-lg font-bold text-uga-white mt-2 hover:underline text-center">
-                {movie.title}
-              </h3>
-            </Link>
+            <img
+              src={movie.poster_url}
+              alt={movie.title}
+              className="w-full aspect-[2/3] object-cover rounded-t-lg transition-transform group-hover:scale-105"
+            />
+            <h3 className="text-lg font-bold text-uga-white mt-2 text-center">
+              {movie.title}
+            </h3>
             <div className="flex flex-col items-center gap-2 pb-4">
               {showRating ? (
                 <span className="bg-uga-red/80 text-uga-white px-3 py-1 rounded-full text-sm font-bold mt-2">
@@ -87,22 +76,19 @@ function MovieGrid({
                   Watch Trailer
                 </button>
               )}
-              <div className="flex flex-wrap justify-center gap-2 mt-2">
-                {getShowtimes(movie.Shows).length > 0 ? (
-                  getShowtimes(movie.Shows).map((show, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-uga-white/10 text-uga-white px-2 py-1 rounded text-xs border border-uga-white/20"
-                    >
-                      {show}
-                    </span>
-                  ))
-                ) : (
-                  <span className="bg-gray-700 text-white px-2 py-1 rounded text-xs border border-uga-white/20">
-                    Coming Soon
-                  </span>
-                )}
-              </div>
+              {comingSoon ? (
+                <span className="mt-2 bg-gray-700 text-white font-bold px-4 py-2 rounded">
+                  Coming Soon
+                </span>
+              ) : (
+                <Link
+                  href={`/movies/${movie.id}`}
+                  className="mt-2 bg-black text-white font-bold px-4 py-2 rounded hover:scale-105 transition-transform duration-200 text-center"
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                >
+                  Tickets &amp; More Info
+                </Link>
+              )}
             </div>
           </div>
         ))}
@@ -158,7 +144,7 @@ export default function Home() {
 
       <section>
         <h2 className="text-2xl font-bold text-uga-white mb-4">Coming Soon</h2>
-        <MovieGrid movies={comingSoon} showRating={false} />
+        <MovieGrid movies={comingSoon} showRating={false} comingSoon={true} />
       </section>
     </div>
   );
