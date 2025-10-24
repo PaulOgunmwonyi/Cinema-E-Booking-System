@@ -22,28 +22,28 @@ VALUES
  'https://m.media-amazon.com/images/S/pv-target-images/e9a43e647b2ca70e75a3c0af046c4dfdcd712380889779cbdc2c57d94ab63902.jpg', 'https://www.youtube.com/embed/EXeTwQWrcwY', '2008-07-18'),
 
  ('The Shawshank Redemption', 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.', 142, 'R', 'Frank Darabont', 'Niki Marvin',
- 'https://cdn.posteritati.com/posters/000/000/040/611/the-shawshank-redemption-md-web.jpg', 'https://www.youtube.com/watch?v=NmzuHjWmXOc', '1994-09-23'),
+ 'https://cdn.posteritati.com/posters/000/000/040/611/the-shawshank-redemption-md-web.jpg', 'https://www.youtube.com/embed/NmzuHjWmXOc', '1994-09-23'),
 
 ('Pulp Fiction', 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.', 154, 'R', 'Quentin Tarantino', 'Lawrence Bender',
- 'https://www.limitedruns.com/media/cache/aa/15/aa159c86c45999a6b4cf14d257837181.jpg', 'https://www.youtube.com/watch?v=s7EdQ4FqbhY', '1994-10-14'),
+ 'https://www.limitedruns.com/media/cache/aa/15/aa159c86c45999a6b4cf14d257837181.jpg', 'https://www.youtube.com/embed/s7EdQ4FqbhY', '1994-10-14'),
 
- ('65', 'After a catastrophic crash on a planet, a pilot Mills discovers he’s stranded on Earth 65 million years ago; with only one chance at rescue, Mills and young survivor Koa must traverse dangerous terrain populated by prehistoric beasts.', 93, 'PG-13', 'Scott Beck & Bryan Woods', 'Sam Raimi / Deborah Liebling / Zainab Azizi / Scott Beck / Bryan Woods', 'https://ih1.redbubble.net/image.4850076747.4621/flat,750x,075,f-pad,750x1000,f8f8f8.jpg', 'https://www.youtube.com/watch?v=bHXejJq5vr0', '2023-03-10'),
+ ('65', 'After a catastrophic crash on a planet, a pilot Mills discovers he’s stranded on Earth 65 million years ago; with only one chance at rescue, Mills and young survivor Koa must traverse dangerous terrain populated by prehistoric beasts.', 93, 'PG-13', 'Scott Beck & Bryan Woods', 'Sam Raimi / Deborah Liebling / Zainab Azizi / Scott Beck / Bryan Woods', 'https://ih1.redbubble.net/image.4850076747.4621/flat,750x,075,f-pad,750x1000,f8f8f8.jpg', 'https://www.youtube.com/embed/bHXejJq5vr0', '2023-03-10'),
 
-('John Wick: Chapter 4', 'John Wick uncovers a path to defeating The High Table. Before he can earn his freedom, he must face powerful enemies across the globe and old friends turn into foes.', 169, 'R', 'Chad Stahelski', 'Basil Iwanyk / Erica Lee / Chad Stahelski', 'https://i.ebayimg.com/images/g/bogAAOSwzNFmZrBF/s-l400.jpg', 'https://www.youtube.com/watch?v=qEVUtrk8_B4', '2023-03-24'),
+('John Wick: Chapter 4', 'John Wick uncovers a path to defeating The High Table. Before he can earn his freedom, he must face powerful enemies across the globe and old friends turn into foes.', 169, 'R', 'Chad Stahelski', 'Basil Iwanyk / Erica Lee / Chad Stahelski', 'https://i.ebayimg.com/images/g/bogAAOSwzNFmZrBF/s-l400.jpg', 'https://www.youtube.com/embed/qEVUtrk8_B4', '2023-03-24'),
 
-('Godzilla Minus One', 'In post-war Japan, an already devastated country must confront a new crisis when Godzilla emerges again, bringing massive destruction and despair.', 125, 'PG-13', 'Takashi Yamazaki', 'Toho Studios / Robot Communications', 'https://i.ebayimg.com/images/g/OFwAAOSwieFmHA7e/s-l400.jpg', 'https://www.youtube.com/watch?v=nAYKaslCXPc', '2023-12-01'),
+('Godzilla Minus One', 'In post-war Japan, an already devastated country must confront a new crisis when Godzilla emerges again, bringing massive destruction and despair.', 125, 'PG-13', 'Takashi Yamazaki', 'Toho Studios / Robot Communications', 'https://i.ebayimg.com/images/g/OFwAAOSwieFmHA7e/s-l400.jpg', 'https://www.youtube.com/embed/nAYKaslCXPc', '2023-12-01'),
 
-('Ghosted', 'A romantic action comedy in which a secret spy and a reluctant adventurer are forced to team up when their relationship is revealed to have been built on lies and hidden agendas.', 116, 'PG-13', 'Dexter Fletcher', 'David Ellison / Dana Goldberg / Don Granger / Chris Evans / Jules Daly', 'https://i.etsystatic.com/56874794/r/il/b50d46/6895130083/il_570xN.6895130083_9p5p.jpg', 'https://www.youtube.com/watch?v=IAdCsNtEuBU', '2023-04-21'),
+('Ghosted', 'A romantic action comedy in which a secret spy and a reluctant adventurer are forced to team up when their relationship is revealed to have been built on lies and hidden agendas.', 116, 'PG-13', 'Dexter Fletcher', 'David Ellison / Dana Goldberg / Don Granger / Chris Evans / Jules Daly', 'https://i.etsystatic.com/56874794/r/il/b50d46/6895130083/il_570xN.6895130083_9p5p.jpg', 'https://www.youtube.com/embed/IAdCsNtEuBU', '2023-04-21'),
 
-('Heart of Stone', 'When a mysterious and powerful AI system known as "The Heart" is endangered, global intelligence operative Rachel must embark on a dangerous mission to protect it from falling into wrong hands.', 122, 'PG-13', 'Tom Harper', 'Gal Gadot / Jamie Dornan / Alia Bhatt / Skydance etc.', 'https://filmfare.wwmindia.com/content/2023/jul/heartofstonealiabhatt11689673722.jpg', 'https://www.youtube.com/watch?v=XuDwndGaCFo', '2023-08-11'),
+('Heart of Stone', 'When a mysterious and powerful AI system known as "The Heart" is endangered, global intelligence operative Rachel must embark on a dangerous mission to protect it from falling into wrong hands.', 122, 'PG-13', 'Tom Harper', 'Gal Gadot / Jamie Dornan / Alia Bhatt / Skydance etc.', 'https://filmfare.wwmindia.com/content/2023/jul/heartofstonealiabhatt11689673722.jpg', 'https://www.youtube.com/embed/XuDwndGaCFo', '2023-08-11'),
 
-('Robots', 'A sci-fi romantic comedy based on a short story where an ordinary human falls in love with a humanoid robot, confronting prejudice, identity, and what it means to be alive.', 93, 'PG-13', 'Ant Hines & Casper Christensen', 'Ant Hines / Casper Christensen etc.', 'https://images.static-bluray.com/movies/dvdcovers/276081_medium.jpg', 'https://www.youtube.com/watch?v=fI53zc6ohk4', '2023-05-19'),
+('Robots', 'A sci-fi romantic comedy based on a short story where an ordinary human falls in love with a humanoid robot, confronting prejudice, identity, and what it means to be alive.', 93, 'PG-13', 'Ant Hines & Casper Christensen', 'Ant Hines / Casper Christensen etc.', 'https://images.static-bluray.com/movies/dvdcovers/276081_medium.jpg', 'https://www.youtube.com/embed/fI53zc6ohk4', '2023-05-19'),
 
-('Dungeons & Dragons: Honor Among Thieves', 'A charming thief and a band of unlikely adventurers embark on a quest to recover a lost relic, but things go dangerously awry when they cross powerful enemies.', 134, 'PG-13', 'John Francis Daley & Jonathan Goldstein', 'Jeremy Latcham / etc.', 'https://www.reddit.com/media?url=https%3A%2F%2Fi.redd.it%2Fpipbhmro534a1.jpg', 'https://www.youtube.com/watch?v=37K6Fpnxv3g', '2023-03-31'),
+('Dungeons & Dragons: Honor Among Thieves', 'A charming thief and a band of unlikely adventurers embark on a quest to recover a lost relic, but things go dangerously awry when they cross powerful enemies.', 134, 'PG-13', 'John Francis Daley & Jonathan Goldstein', 'Jeremy Latcham / etc.', 'https://www.reddit.com/media?url=https%3A%2F%2Fi.redd.it%2Fpipbhmro534a1.jpg', 'https://www.youtube.com/embed/37K6Fpnxv3g', '2023-03-31'),
 
-('Blue Beetle', 'A young man discovers he has superpowers when an alien scarab grafts itself to his spine, giving him armor and capabilities far beyond ordinary; he must learn to use them to protect those he loves.', 120, 'PG-13', 'Angel Manuel Soto', 'Hiram Garcia / etc.', 'https://m.media-amazon.com/images/I/81l3eqG5-oL._UF894,1000_QL80_.jpg', 'https://www.youtube.com/watch?v=vS3_72Gb-bI', '2023-08-18'),
+('Blue Beetle', 'A young man discovers he has superpowers when an alien scarab grafts itself to his spine, giving him armor and capabilities far beyond ordinary; he must learn to use them to protect those he loves.', 120, 'PG-13', 'Angel Manuel Soto', 'Hiram Garcia / etc.', 'https://m.media-amazon.com/images/I/81l3eqG5-oL._UF894,1000_QL80_.jpg', 'https://www.youtube.com/embed/vS3_72Gb-bI', '2023-08-18'),
 
-('No Hard Feelings', 'When a wealthy couple hires a young woman to date their introverted son before college to help boost his confidence, comedic chaos ensues as romance, expectations, and misunderstandings collide.', 111, 'R', 'Gene Stupnitsky', 'Good Universe etc.', 'https://pbs.twimg.com/media/FxJZVHvXsAI2vmE.jpg', 'https://www.youtube.com/watch?v=P15S6ND8kbQ', '2023-06-23');
+('No Hard Feelings', 'When a wealthy couple hires a young woman to date their introverted son before college to help boost his confidence, comedic chaos ensues as romance, expectations, and misunderstandings collide.', 111, 'R', 'Gene Stupnitsky', 'Good Universe etc.', 'https://pbs.twimg.com/media/FxJZVHvXsAI2vmE.jpg', 'https://www.youtube.com/embed/P15S6ND8kbQ', '2023-06-23');
 
 -- =========================
 -- Map Movies to Genres
@@ -103,6 +103,7 @@ INSERT INTO shows (movie_id, hall_id, start_time, end_time)
 SELECT m.id, h.id, '2025-09-15 19:00:00', '2025-09-15 21:49:00'
 FROM movies m, halls h
 WHERE m.title = 'Interstellar' AND h.name = 'Main Hall';
+
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
 SELECT m.id, h.id, '2025-09-16 20:00:00', '2025-09-16 22:30:00'
