@@ -1,5 +1,6 @@
 import "./globals.css";
 import Header from "./components/Header";
+import { UserProvider } from "./contexts/UserContext";
 
 export default function RootLayout({
   children,
@@ -9,10 +10,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <Header />
-        <main className="min-h-screen relative">
-          {children}
-        </main>
+        <UserProvider>
+          <Header />
+          <main className="min-h-screen relative">
+            {children}
+          </main>
+        </UserProvider>
       </body>
     </html>
   );

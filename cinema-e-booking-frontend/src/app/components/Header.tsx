@@ -3,8 +3,10 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SearchModal from './SearchModal';
+import { useUser } from '../contexts/UserContext';
 
 const Header = () => {
+  const { user, isLoggedIn, logout } = useUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [genre, setGenre] = useState('');
@@ -44,6 +46,23 @@ const Header = () => {
     setSearchQuery('');
   };
 
+  const handleLoginLogout = () => {
+    if (isLoggedIn) {
+      logout();
+    } else {
+      router.push('/pages/signup');
+    }
+  };
+
+  const AuthButton = () => (
+    <button
+      onClick={handleLoginLogout}
+      className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
+    >
+      {isLoggedIn ? `Logout ${user?.name}` : 'Login'}
+    </button>
+  );
+
   return (
     <>
       <header className="bg-black border-b-4 border-white sticky top-0 z-40">
@@ -59,8 +78,8 @@ const Header = () => {
               </Link>
             </div>
 
-            {/* Right side - Search */}
-            <div className="flex items-center space-x-3 relative">
+            {/* Right side - Search and Auth */}
+            <div className="flex items-center space-x-4 relative">
               <button
                 ref={filterButtonRef}
                 onClick={() => setIsModalOpen(true)}
@@ -89,6 +108,8 @@ const Header = () => {
                   </svg>
                 </button>
               </form>
+
+              <AuthButton />
             </div>
           </div>
         </div>
