@@ -64,3 +64,89 @@ CREATE TABLE shows (
 CREATE INDEX idx_movies_title ON movies (title);
 
 CREATE INDEX idx_shows_start_time ON shows (start_time);
+
+--users table
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  first_name TEXT,
+  last_name TEXT,
+  is_active BOOLEAN DEFAULT FALSE,  
+  is_admin BOOLEAN DEFAULT FALSE,
+  promo_opt_in BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE roles (
+  id SERIAL PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL
+);
+
+-- role rows 
+INSERT INTO roles (name) 
+  SELECT v FROM (VALUES('user'),('admin')) AS t(v);
+
+-- Email confirmation tokens
+CREATE TABLE email_confirmations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  code VARCHAR(6) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX  idx_email_confirmations_token ON email_confirmations(token);
+
+-- Password reset tokens
+CREATE TABLE password_resets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_password_resets_token ON password_resets(token);
+
+CREATE TABLE refresh_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE addresses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  line1 TEXT,
+  line2 TEXT,
+  city TEXT,
+  state TEXT,
+  zip TEXT,
+  country TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Payment cards table 
+CREATE TABLE payment_cards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  last4 CHAR(4) NOT NULL,
+  card_hash TEXT NOT NULL,    
+  card_brand TEXT,
+  exp_month SMALLINT,
+  exp_year SMALLINT,
+  is_default BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- index for lookups
+CREATE INDEX idx_payment_cards_user_id ON payment_cards(user_id);
+

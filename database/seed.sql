@@ -100,38 +100,34 @@ INSERT INTO halls (name, description) VALUES
 
 -- Already showing
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-15 19:00:00', '2025-09-15 21:49:00'
+SELECT m.id, h.id, '2025-09-15 19:00:00', '2025-09-18 18:00:00','2025-09-20 15:00:00', '2025-09-23 21:00:00'
 FROM movies m, halls h
 WHERE m.title = 'Interstellar' AND h.name = 'Main Hall';
 
-
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-16 20:00:00', '2025-09-16 22:30:00'
+SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-17 20:00:00', '2025-09-23 21:00:00'
 FROM movies m, halls h
 WHERE m.title = 'Inception' AND h.name = 'Main Hall';
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-20 19:00:00', '2025-09-20 20:33:00'
-FROM movies m, halls h
-WHERE m.title = '65' AND h.name = 'Main Hall';
-
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-21 20:00:00', '2025-09-21 22:49:00'
-FROM movies m, halls h
-WHERE m.title = 'John Wick: Chapter 4' AND h.name = 'Main Hall';
-
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-22 18:30:00', '2025-09-22 20:35:00'
-FROM movies m, halls h
-WHERE m.title = 'Godzilla Minus One' AND h.name = 'Main Hall';
-
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-23 19:30:00', '2025-09-23 21:26:00'
+SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-23 21:00:00', '2025-09-23 19:30:00'
 FROM movies m, halls h
 WHERE m.title = 'Ghosted' AND h.name = 'Main Hall';
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-24 20:00:00', '2025-09-24 22:02:00'
+SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-23 21:00:00', '2025-09-25 20:00:00'
 FROM movies m, halls h
 WHERE m.title = 'Heart of Stone' AND h.name = 'Main Hall';
+
+INSERT INTO shows (movie_id, hall_id, start_time, end_time)
+SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-22 18:30:00','2025-09-23 21:00:00'
+FROM movies m, halls h
+WHERE m.title = 'Godzilla Minus One' AND h.name = 'Main Hall';
+
+INSERT INTO shows (movie_id, hall_id, start_time, end_time)
+SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-22 20:00:00', '2025-09-23 21:00:00'
+FROM movies m, halls h
+WHERE m.title = 'John Wick: Chapter 4' AND h.name = 'Main Hall';
+
+
 

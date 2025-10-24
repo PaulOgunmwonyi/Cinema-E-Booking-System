@@ -10,6 +10,8 @@ const { signAccessToken, signRefreshToken } = require('../utils/jwt');
 const registerUser = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); 
+
   try {
     
     const existingUser = await db.sequelize.query(
@@ -40,26 +42,21 @@ const registerUser = async (req, res) => {
       return res.status(500).json({ message: 'Error: Email not defined for user.' });
     }
 
-    //Generate confirmation token
-    const token = generateEmailToken(user.id);
-
-    //  Store token in email_confirmations table
+    // store code in DB
     await db.sequelize.query(
-      `INSERT INTO email_confirmations (user_id, token, expires_at, created_at)
-      VALUES ($1, $2, NOW() + INTERVAL '24 hours', NOW())`,
-      { bind: [user.id, token], type: db.Sequelize.QueryTypes.INSERT }
+      `INSERT INTO email_confirmations (user_id, code, expires_at)
+      VALUES ($1, $2, NOW() + INTERVAL '24 hours')`,
+      { bind: [user.id, verificationCode], type: db.Sequelize.QueryTypes.INSERT }
     );
 
-    //  Send confirmation email
-    const confirmLink = `http://localhost:5001/api/auth/confirm?token=${token}`;
     await sendEmail({
       to: user.email,
-      subject: 'Confirm your Cinema E-Booking account',
+      subject: 'Your Cinema E-Booking Verification Code',
       html: `
         <h2>Welcome, ${firstName} ${lastName}!</h2>
-        <p>Please confirm your email by clicking the link below:</p>
-        <a href="${confirmLink}">Confirm Email</a>
-        <p>This link expires in 24 hours.</p>
+        <p>Your verification code is:</p>
+        <h1 style="font-size: 32px; letter-spacing: 3px;">${verificationCode}</h1>
+        <p>This code expires in 24 hours.</p>
       `,
     });
 
@@ -72,42 +69,45 @@ const registerUser = async (req, res) => {
   }
 };
 
-// Confirm Email (verify token)
-const confirmEmail = async (req, res) => {
-  const { token } = req.query;
+const confirmCode = async (req, res) => {
+  const { email, code } = req.body;
 
   try {
-    const decoded = verifyEmailToken(token);
-    if (!decoded) return res.status(400).json({ message: 'Invalid or expired token' });
-
-    const userId = decoded.id;
-
-    // Check token in DB
-    const result = await db.sequelize.query(
-      `SELECT * FROM email_confirmations WHERE user_id=$1 AND token=$2 AND expires_at > NOW()`,
-      { bind: [userId, token], type: db.Sequelize.QueryTypes.SELECT }
+    // get user id from email
+    const [user] = await db.sequelize.query(
+      `SELECT id FROM users WHERE email=$1`,
+      { bind: [email], type: db.Sequelize.QueryTypes.SELECT }
     );
 
-    if (result.length === 0)
-      return res.status(400).json({ message: 'Invalid or expired token' });
+    if (!user) return res.status(400).json({ message: 'Invalid email.' });
 
-    // Activate user
+    // check code validity
+    const [record] = await db.sequelize.query(
+      `SELECT * FROM email_confirmations
+       WHERE user_id=$1 AND code=$2 AND expires_at > NOW() AND used=false`,
+      { bind: [user.id, code], type: db.Sequelize.QueryTypes.SELECT }
+    );
+
+    if (!record) {
+      return res.status(400).json({ message: 'Invalid or expired verification code.' });
+    }
+
+    // mark as used
     await db.sequelize.query(
-      `UPDATE users SET is_active = true WHERE id = $1`,
-      { bind: [userId], type: db.Sequelize.QueryTypes.UPDATE }
+      `UPDATE email_confirmations SET used=true WHERE id=$1`,
+      { bind: [record.id], type: db.Sequelize.QueryTypes.UPDATE }
     );
 
-    // Optionally delete token entry
-    await db.sequelize.query(`DELETE FROM email_confirmations WHERE user_id=$1`, 
-      {bind: [userId], type: db.Sequelize.QueryTypes.DELETE}
+    // activate user
+    await db.sequelize.query(
+      `UPDATE users SET is_active=true WHERE id=$1`,
+      { bind: [user.id], type: db.Sequelize.QueryTypes.UPDATE }
     );
 
-    console.log(` User ${userId} email confirmed.`);
-
-    return res.status(200).json({ message: 'Email confirmed successfully!' });
-  } catch (error) {
-    console.error('Error confirming email:', error);
-    return res.status(500).json({ message: 'Server error confirming email.' });
+    return res.status(200).json({ message: 'Email verified successfully!' });
+  } catch (err) {
+    console.error('Error verifying code:', err);
+    res.status(500).json({ message: 'Server error verifying code.' });
   }
 };
 
@@ -277,4 +277,4 @@ const logoutUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, confirmEmail , loginUser, forgotPassword, resetPassword, logoutUser};
+module.exports = { registerUser, confirmCode , loginUser, forgotPassword, resetPassword, logoutUser};
