@@ -1,5 +1,10 @@
 
 -- =========================
+-- Enable required extensions
+-- =========================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- =========================
 -- Movies Table
 -- =========================
 CREATE TABLE movies (
@@ -103,7 +108,7 @@ CREATE TABLE email_confirmations (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX  idx_email_confirmations_token ON email_confirmations(token);
+CREATE INDEX idx_email_confirmations_code ON email_confirmations(code);
 
 -- Password reset tokens
 CREATE TABLE password_resets (
