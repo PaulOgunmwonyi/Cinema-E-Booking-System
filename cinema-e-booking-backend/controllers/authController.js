@@ -7,7 +7,7 @@ const { signAccessToken, signRefreshToken } = require('../utils/jwt');
 
 // Registration (create user + send confirmation email)
 const registerUser = async (req, res) => {
-  const { firstName, lastName, email, password, phone, address, card } = req.body;
+  const { firstName, lastName, email, password, phone, promoOptIn, address, cards } = req.body;
 
   const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); 
 
@@ -27,10 +27,10 @@ const registerUser = async (req, res) => {
 
     // Insert new user 
     const [user] = await db.sequelize.query(
-      `INSERT INTO users (first_name, last_name, email, password_hash, phone, is_active)
-      VALUES ($1, $2, $3, $4, $5, false)
+      `INSERT INTO users (first_name, last_name, email, password_hash, phone, promo_opt_in, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, false)
       RETURNING id, email`,
-      { bind: [firstName, lastName, email, hashedPassword, phone], type: db.Sequelize.QueryTypes.SELECT }
+      { bind: [firstName, lastName, email, hashedPassword, phone, promoOptIn || false], type: db.Sequelize.QueryTypes.SELECT }
     );
 
     if (!user || !user.email) {
@@ -38,7 +38,57 @@ const registerUser = async (req, res) => {
       return res.status(500).json({ message: 'Error: Email not defined for user.' });
     }
 
-    // store code in DB
+    // Handle optional address
+    if (address && address.street) {
+      console.log('Inserting address for user:', user.id);
+      await db.sequelize.query(
+        `INSERT INTO addresses (user_id, line1, city, state, zip, country)
+        VALUES ($1, $2, $3, $4, $5, $6)`,
+        {
+          bind: [
+            user.id,
+            address.street,
+            address.city,
+            address.state,
+            address.zip,
+            address.country || 'USA', // default country if not provided
+          ],
+          type: db.Sequelize.QueryTypes.INSERT,
+        }
+      );
+    }
+
+    // Handle optional payment cards (max 3)
+    if (cards && Array.isArray(cards) && cards.length > 0) {
+      const algorithm = 'aes-256-cbc';
+      const key = crypto.scryptSync(process.env.CARD_SECRET || 'default-secret', 'salt', 32);
+      
+      for (const card of cards.slice(0, 3)) { // Limit to 3 cards
+        if (card.cardNumber) {
+          const iv = crypto.randomBytes(16);
+          let cipher = crypto.createCipheriv(algorithm, key, iv);
+          let encrypted = cipher.update(card.cardNumber.replace(/\s/g, ''), 'utf8', 'hex');
+          encrypted += cipher.final('hex');
+
+          await db.sequelize.query(
+            `INSERT INTO payment_cards (user_id, card_type, card_number_encrypted, expiration_date, is_default)
+            VALUES ($1, $2, $3, $4, $5)`,
+            { 
+              bind: [
+                user.id, 
+                card.cardType, 
+                `${iv.toString('hex')}:${encrypted}`, 
+                card.expirationDate,
+                card.isDefault || false
+              ], 
+              type: db.Sequelize.QueryTypes.INSERT 
+            }
+          );
+        }
+      }
+    }
+
+    // store verification code in DB
     await db.sequelize.query(
       `INSERT INTO email_confirmations (user_id, code, expires_at)
       VALUES ($1, $2, NOW() + INTERVAL '24 hours')`,
@@ -63,45 +113,6 @@ const registerUser = async (req, res) => {
     console.error('Error during registration:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
-
-
-    if (address && address.street) {
-      console.log('Inserting address for user:', user.id);
-      await db.sequelize.query(
-        `INSERT INTO addresses (user_id, line1, city, state, zip, country)
-        VALUES ($1, $2, $3, $4, $5, $6)`,
-        {
-          bind: [
-            user.id,
-            address.street,
-            address.city,
-            address.state,
-            address.zip,
-            address.country || 'USA', // default country if not provided
-          ],
-          type: db.Sequelize.QueryTypes.INSERT,
-        }
-      );
-    }
-
-    if (card && card.cardNumber) {
-      // encrypt card number before storing
-      const crypto = require('crypto');
-      const algorithm = 'aes-256-cbc';
-      const key = crypto.scryptSync(process.env.CARD_SECRET, 'salt', 32);
-      const iv = crypto.randomBytes(16);
-
-      let cipher = crypto.createCipheriv(algorithm, key, iv);
-      let encrypted = cipher.update(card.cardNumber, 'utf8', 'hex');
-      encrypted += cipher.final('hex');
-
-      await db.sequelize.query(
-        `INSERT INTO payment_cards (user_id, card_type, card_number_encrypted, expiration_date)
-        VALUES ($1, $2, $3, $4)`,
-        { bind: [user.id, card.cardType, `${iv.toString('hex')}:${encrypted}`, card.expirationDate], type: db.Sequelize.QueryTypes.INSERT }
-      );
-    }
-
 };
 
 const confirmCode = async (req, res) => {

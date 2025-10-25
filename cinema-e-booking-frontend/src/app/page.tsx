@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiService, Movie as ApiMovie } from './utils/api';
 
@@ -110,13 +111,22 @@ function MovieGrid({
 export default function Home() {
   const [movies, setMovies] = useState<ApiMovie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
+    // Check if user was redirected from successful registration
+    if (searchParams.get('registered') === 'true') {
+      setShowSuccess(true);
+      // Hide success message after 5 seconds
+      setTimeout(() => setShowSuccess(false), 5000);
+    }
+
     apiService.getMovies().then((data) => {
       setMovies(data);
       setLoading(false);
     });
-  }, []);
+  }, [searchParams]);
 
   // Now Playing: has at least one showtime
   const nowPlaying = movies.filter(
@@ -141,6 +151,14 @@ export default function Home() {
       <h1 className="text-4xl font-bold text-uga-white mb-8 text-center drop-shadow-lg">
         Welcome to Cinema E-Booking
       </h1>
+
+      {showSuccess && (
+        <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
+          <p className="text-green-400 text-center">
+            🎉 Welcome! Your account has been successfully created and verified. You can now book tickets!
+          </p>
+        </div>
+      )}
 
       <section className="mb-12">
         <h2 className="text-2xl font-bold text-uga-white mb-4">Now Playing</h2>
