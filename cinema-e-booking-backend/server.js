@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -17,7 +18,7 @@ app.use(cors({
 app.use(bodyParser.json());
 
 app.use('/api/auth', authRoutes);
-// app.use('/api/profile', profileRoutes);
+app.use('/api/profile', profileRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is working ");

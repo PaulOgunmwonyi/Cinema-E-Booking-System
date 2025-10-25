@@ -1,11 +1,11 @@
-// const express = require('express');
-// const {authMiddleware} = require('../middleware/authMiddleware');
-// const { getProfile, updateProfile } = require('../controllers/profileController');
+const express = require('express');
+const authMiddleware = require('../middleware/authenMiddleware');
+const { getProfile, updateProfile } = require('../controllers/profileController');
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.get('/', authMiddleware, getProfile);
+router.get('/me', authMiddleware, getProfile);
 
-// router.put('/', authMiddleware, updateProfile);
+router.put('/edit', authMiddleware, updateProfile);
 
-// module.exports = router;
+module.exports = router;

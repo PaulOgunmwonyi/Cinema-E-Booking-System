@@ -1,14 +1,13 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 
-const { generateEmailToken, verifyEmailToken } = require('../utils/jwt');
 const { sendEmail } = require('../services/emailService');
 const db = require('../models'); 
 const { signAccessToken, signRefreshToken } = require('../utils/jwt');
 
 // Registration (create user + send confirmation email)
 const registerUser = async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, lastName, email, password, phone, address, card } = req.body;
 
   const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); 
 
@@ -27,15 +26,12 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Insert new user 
-    const userResult = await db.sequelize.query(
-      `INSERT INTO users (first_name, last_name, email, password_hash, is_active)
-      VALUES ($1, $2, $3, $4, false)
+    const [user] = await db.sequelize.query(
+      `INSERT INTO users (first_name, last_name, email, password_hash, phone, is_active)
+      VALUES ($1, $2, $3, $4, $5, false)
       RETURNING id, email`,
-      { bind: [firstName, lastName, email, hashedPassword], type: db.Sequelize.QueryTypes.INSERT }
+      { bind: [firstName, lastName, email, hashedPassword, phone], type: db.Sequelize.QueryTypes.SELECT }
     );
-
-    const user = Array.isArray(userResult[0]) ? userResult[0][0] : userResult[0];
-    console.log('User returned from DB:', user);
 
     if (!user || !user.email) {
       console.error('No email found for user!');
@@ -67,6 +63,45 @@ const registerUser = async (req, res) => {
     console.error('Error during registration:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
+
+
+    if (address && address.street) {
+      console.log('Inserting address for user:', user.id);
+      await db.sequelize.query(
+        `INSERT INTO addresses (user_id, line1, city, state, zip, country)
+        VALUES ($1, $2, $3, $4, $5, $6)`,
+        {
+          bind: [
+            user.id,
+            address.street,
+            address.city,
+            address.state,
+            address.zip,
+            address.country || 'USA', // default country if not provided
+          ],
+          type: db.Sequelize.QueryTypes.INSERT,
+        }
+      );
+    }
+
+    if (card && card.cardNumber) {
+      // encrypt card number before storing
+      const crypto = require('crypto');
+      const algorithm = 'aes-256-cbc';
+      const key = crypto.scryptSync(process.env.CARD_SECRET, 'salt', 32);
+      const iv = crypto.randomBytes(16);
+
+      let cipher = crypto.createCipheriv(algorithm, key, iv);
+      let encrypted = cipher.update(card.cardNumber, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+
+      await db.sequelize.query(
+        `INSERT INTO payment_cards (user_id, card_type, card_number_encrypted, expiration_date)
+        VALUES ($1, $2, $3, $4)`,
+        { bind: [user.id, card.cardType, `${iv.toString('hex')}:${encrypted}`, card.expirationDate], type: db.Sequelize.QueryTypes.INSERT }
+      );
+    }
+
 };
 
 const confirmCode = async (req, res) => {
@@ -113,7 +148,7 @@ const confirmCode = async (req, res) => {
 
 //  Login User
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
 
   try {
     
@@ -138,13 +173,17 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    //token durations
+    const accessExpiry = rememberMe ? '7d' : '1h';
+    const refreshExpiry = rememberMe ? '30d' : '7d';
+
     const payload = { id: user.id, email: user.email, is_admin: user.is_admin };
-    const accessToken = signAccessToken(payload);
-    const refreshToken = signRefreshToken(payload);
+    const accessToken = signAccessToken(payload, rememberMe ? '7d' : '1h');
+    const refreshToken = signRefreshToken(payload, rememberMe ? '30d' : '7d');
 
     await db.sequelize.query(
       `INSERT INTO refresh_tokens (user_id, token, expires_at)
-      VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+       VALUES ($1, $2, NOW() + INTERVAL '${rememberMe ? 30 : 7} days')`,
       { bind: [user.id, refreshToken], type: db.Sequelize.QueryTypes.INSERT }
     );
 

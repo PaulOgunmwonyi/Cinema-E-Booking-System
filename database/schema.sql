@@ -72,6 +72,7 @@ CREATE TABLE users (
   password_hash TEXT NOT NULL,
   first_name TEXT,
   last_name TEXT,
+  phone VARCHAR(20),
   is_active BOOLEAN DEFAULT FALSE,  
   is_admin BOOLEAN DEFAULT FALSE,
   promo_opt_in BOOLEAN DEFAULT FALSE,
@@ -87,6 +88,10 @@ CREATE TABLE roles (
 -- role rows 
 INSERT INTO roles (name) 
   SELECT v FROM (VALUES('user'),('admin')) AS t(v);
+
+INSERT INTO users (first_name, last_name, email, password_hash, is_admin, is_active)
+VALUES ('Admin', 'User', 'admin@example.com', crypt('admin123', gen_salt('bf')), true, true);
+
 
 -- Email confirmation tokens
 CREATE TABLE email_confirmations (
@@ -137,11 +142,9 @@ CREATE TABLE addresses (
 CREATE TABLE payment_cards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  last4 CHAR(4) NOT NULL,
-  card_hash TEXT NOT NULL,    
-  card_brand TEXT,
-  exp_month SMALLINT,
-  exp_year SMALLINT,
+  card_type VARCHAR(20),
+  card_number_encrypted TEXT,
+  expiration_date VARCHAR (10),
   is_default BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
