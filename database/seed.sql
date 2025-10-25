@@ -100,32 +100,58 @@ INSERT INTO halls (name, description) VALUES
 
 -- Already showing
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-15 19:00:00', '2025-09-18 18:00:00','2025-09-20 15:00:00', '2025-09-23 21:00:00'
+SELECT m.id, h.id, '2025-10-25 19:00:00', '2025-10-25 21:49:00'
 FROM movies m, halls h
 WHERE m.title = 'Interstellar' AND h.name = 'Main Hall';
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-17 20:00:00', '2025-09-23 21:00:00'
+SELECT m.id, h.id, '2025-10-26 18:00:00', '2025-10-26 20:28:00'
 FROM movies m, halls h
 WHERE m.title = 'Inception' AND h.name = 'Main Hall';
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-23 21:00:00', '2025-09-23 19:30:00'
+SELECT m.id, h.id, '2025-10-27 20:00:00', '2025-10-27 21:56:00'
 FROM movies m, halls h
 WHERE m.title = 'Ghosted' AND h.name = 'Main Hall';
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-23 21:00:00', '2025-09-25 20:00:00'
+SELECT m.id, h.id, '2025-10-28 19:30:00', '2025-10-28 21:32:00'
 FROM movies m, halls h
 WHERE m.title = 'Heart of Stone' AND h.name = 'Main Hall';
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-22 18:30:00','2025-09-23 21:00:00'
+SELECT m.id, h.id, '2025-10-29 18:30:00', '2025-10-29 20:35:00'
 FROM movies m, halls h
 WHERE m.title = 'Godzilla Minus One' AND h.name = 'Main Hall';
 
 INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-09-18 18:00:00', '2025-09-20 15:00:00', '2025-09-22 20:00:00', '2025-09-23 21:00:00'
+SELECT m.id, h.id, '2025-10-30 20:00:00', '2025-10-30 22:49:00'
+FROM movies m, halls h
+WHERE m.title = 'John Wick: Chapter 4' AND h.name = 'Main Hall';
+
+-- Additional shows for variety
+INSERT INTO shows (movie_id, hall_id, start_time, end_time)
+SELECT m.id, h.id, '2025-10-25 14:00:00', '2025-10-25 16:49:00'
+FROM movies m, halls h
+WHERE m.title = 'Interstellar' AND h.name = 'Main Hall';
+
+INSERT INTO shows (movie_id, hall_id, start_time, end_time)
+SELECT m.id, h.id, '2025-10-26 21:00:00', '2025-10-26 23:28:00'
+FROM movies m, halls h
+WHERE m.title = 'Inception' AND h.name = 'Main Hall';
+
+INSERT INTO shows (movie_id, hall_id, start_time, end_time)
+SELECT m.id, h.id, '2025-10-25 16:30:00', '2025-10-25 18:52:00'
+FROM movies m, halls h
+WHERE m.title = 'The Dark Knight' AND h.name = 'Main Hall';
+
+INSERT INTO shows (movie_id, hall_id, start_time, end_time)
+SELECT m.id, h.id, '2025-10-27 15:00:00', '2025-10-27 16:33:00'
+FROM movies m, halls h
+WHERE m.title = '65' AND h.name = 'Main Hall';
+
+INSERT INTO shows (movie_id, hall_id, start_time, end_time)
+SELECT m.id, h.id, '2025-10-28 22:00:00', '2025-10-29 00:49:00'
 FROM movies m, halls h
 WHERE m.title = 'John Wick: Chapter 4' AND h.name = 'Main Hall';
 
