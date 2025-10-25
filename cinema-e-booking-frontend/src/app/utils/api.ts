@@ -25,16 +25,18 @@ export interface Movie {
 }
 
 class ApiService {
-  private async fetchApi<T>(endpoint: string): Promise<T> {
+  private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
         },
+        ...options,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
       return await response.json();
@@ -62,6 +64,62 @@ class ApiService {
   // Get all shows
   async getShows(): Promise<Show[]> {
     return this.fetchApi<Show[]>('/shows');
+  }
+
+  // Authentication methods
+  async registerUser(userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    phone?: string;
+    promoOptIn?: boolean;
+    address?: {
+      street: string;
+      city: string;
+      state: string;
+      zip: string;
+      country?: string;
+    };
+    cards?: Array<{
+      cardType: string;
+      cardNumber: string;
+      expirationDate: string;
+      isDefault?: boolean;
+    }>;
+  }): Promise<{ message: string }> {
+    return this.fetchApi<{ message: string }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async verifyEmail(email: string, code: string): Promise<{ message: string }> {
+    return this.fetchApi<{ message: string }>('/api/auth/verify-code', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+  }
+
+  async loginUser(credentials: {
+    email: string;
+    password: string;
+    rememberMe?: boolean;
+  }): Promise<{
+    message: string;
+    accessToken: string;
+    refreshToken: string;
+    role: string;
+  }> {
+    return this.fetchApi<{
+      message: string;
+      accessToken: string;
+      refreshToken: string;
+      role: string;
+    }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
   }
 }
 
