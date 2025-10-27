@@ -254,6 +254,7 @@ export default function EditProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setPasswordError(null);
 
     if (!validateForm()) return;
 
@@ -269,9 +270,16 @@ export default function EditProfilePage() {
         promoOptIn: form.promotions,
         address: addressFilled ? { street, city, state, zip, country } : undefined,
       });
-      router.push('/?profileUpdated=true'); // <-- add query param
-    } catch (err) {
-      setError('Failed to update profile. Please try again.');
+      router.push('/?profileUpdated=true');
+    } catch (err: any) {
+      // Show password error if backend returns it
+      if (err?.message?.toLowerCase().includes('current password')) {
+        setPasswordError(err.message);
+      } else if (err?.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to update profile. Please try again.');
+      }
     }
   };
 

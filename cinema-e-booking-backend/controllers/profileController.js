@@ -37,7 +37,7 @@ const getProfile = async (req, res) => {
 // PUT /api/profile/edit
 const updateProfile = async (req, res) => {
   const userId = req.user.id;
-  const { firstName, lastName, password, address, card, promoOptIn } = req.body;
+  const { firstName, lastName, password, currentPassword, address, card, promoOptIn } = req.body;
 
   try {
     // ✅ Update name and promo preference
@@ -51,8 +51,23 @@ const updateProfile = async (req, res) => {
       { bind: [firstName, lastName, promoOptIn, userId], type: db.Sequelize.QueryTypes.UPDATE }
     );
 
-    // ✅ Update password if provided
+    // ✅ Password change: verify current password
     if (password) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: 'Current password is required.' });
+      }
+      // Get the user's password hash from DB
+      const [user] = await db.sequelize.query(
+        `SELECT password_hash FROM users WHERE id = $1`,
+        { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
+      );
+      const passwordMatch = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!passwordMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect.' });
+      }
+      if (currentPassword === password) {
+        return res.status(400).json({ message: 'New password cannot be the same as current password.' });
+      }
       const hashed = await bcrypt.hash(password, 10);
       await db.sequelize.query(
         `UPDATE users SET password_hash = $1 WHERE id = $2`,
