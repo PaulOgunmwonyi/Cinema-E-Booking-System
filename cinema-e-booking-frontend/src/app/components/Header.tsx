@@ -49,7 +49,12 @@ const Header = () => {
   const handleLoginLogout = () => {
     if (isLoggedIn) {
       logout();
-      // After logging out, redirect the user back to the home page
+      // After logging out, set a session flag and redirect to home so UI shows confirmation
+      try {
+        sessionStorage.setItem('showLogoutBanner', '1');
+      } catch (err) {
+        // sessionStorage might not be available in some environments - ignore
+      }
       router.push('/');
     } else {
       router.push('/pages/login');

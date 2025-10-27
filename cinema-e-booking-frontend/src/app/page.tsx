@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiService, Movie as ApiMovie } from './utils/api';
 
@@ -113,7 +113,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showProfileUpdated, setShowProfileUpdated] = useState(false);
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false);
+  const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     // Check if user was redirected from successful registration
@@ -128,11 +131,33 @@ export default function Home() {
       setTimeout(() => setShowProfileUpdated(false), 5000);
     }
 
+    if (searchParams.get('login') === 'success') {
+      setShowLoginSuccess(true);
+      // Clear the query param so refreshing won't re-show the banner
+      try {
+        router.replace('/');
+      } catch (e) {
+        // ignore routing errors
+      }
+      setTimeout(() => setShowLoginSuccess(false), 5000);
+    }
+
+    // Show logout banner only when logout was initiated in this session
+    try {
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('showLogoutBanner') === '1') {
+        setShowLogoutSuccess(true);
+        setTimeout(() => setShowLogoutSuccess(false), 5000);
+        sessionStorage.removeItem('showLogoutBanner');
+      }
+    } catch (err) {
+      // ignore sessionStorage errors
+    }
+
     apiService.getMovies().then((data) => {
       setMovies(data);
       setLoading(false);
     });
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   // Now Playing: has at least one showtime
   const nowPlaying = movies.filter(
@@ -163,6 +188,18 @@ export default function Home() {
           <p className="text-green-400 text-center">
             🎉 Welcome! Your account has been successfully created and verified. You can now book tickets!
           </p>
+        </div>
+      )}
+
+      {showLoginSuccess && (
+        <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
+          <p className="text-green-400 text-center">✅ Successfully signed in.</p>
+        </div>
+      )}
+
+      {showLogoutSuccess && (
+        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
+          <p className="text-red-400 text-center">You have been logged out.</p>
         </div>
       )}
 

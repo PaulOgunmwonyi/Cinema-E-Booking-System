@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { apiService } from '../../utils/api';
 import { useUser } from '../../contexts/UserContext';
@@ -13,6 +14,23 @@ const LoginPage = () => {
 
   const router = useRouter();
   const { login } = useUser();
+  const searchParams = useSearchParams();
+  const [showRegisteredBanner, setShowRegisteredBanner] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('registered') === 'true') {
+      setShowRegisteredBanner(true);
+      // Remove the query param so the banner only appears once — clearing it
+      // prevents the message from reappearing on refresh.
+      try {
+        router.replace('/pages/login');
+      } catch (e) {
+        // ignore routing errors
+      }
+
+      setTimeout(() => setShowRegisteredBanner(false), 5000);
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +50,9 @@ const LoginPage = () => {
       const res = await apiService.loginUser({ email, password });
       const tokens = { accessToken: res.accessToken, refreshToken: res.refreshToken };
       const user = { id: '', email, firstName: '', lastName: '', role: res.role };
-      login(user, tokens);
-      router.push('/');
+  login(user, tokens);
+  // Redirect to home with a success flag so the home page can show a confirmation
+  router.push('/?login=success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -56,6 +75,11 @@ const LoginPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {showRegisteredBanner && (
+              <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-3 mb-4">
+                <p className="text-green-400 text-center">Registration complete — please log in.</p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label htmlFor="email" className="block text-white font-medium mb-2">Email</label>
