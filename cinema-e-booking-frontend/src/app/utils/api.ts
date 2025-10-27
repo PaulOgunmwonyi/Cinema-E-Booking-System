@@ -222,10 +222,11 @@ class ApiService {
     }, true);
   }
 
-  // Remove a payment card (if you have a backend endpoint for this)
+  // Remove a payment card
   async removePaymentCard(cardId: string): Promise<{ message: string }> {
-    return this.fetchApi(`/api/payment-cards/${cardId}`, {
-      method: 'DELETE',
+    return this.fetchApi('/api/profile/edit', {
+      method: 'PUT',
+      body: JSON.stringify({ removeCardId: cardId }),
     }, true);
   }
 }

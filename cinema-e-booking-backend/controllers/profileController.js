@@ -37,7 +37,7 @@ const getProfile = async (req, res) => {
 // PUT /api/profile/edit
 const updateProfile = async (req, res) => {
   const userId = req.user.id;
-  const { firstName, lastName, password, currentPassword, address, card, promoOptIn } = req.body;
+  const { firstName, lastName, password, currentPassword, address, card, removeCardId, promoOptIn } = req.body;
 
   try {
     // Update name and promo preference
@@ -103,6 +103,14 @@ const updateProfile = async (req, res) => {
           { bind: [userId, address.street, address.city, address.state, address.zip], type: db.Sequelize.QueryTypes.INSERT }
         );
       }
+    }
+
+    // Remove card logic
+    if (removeCardId) {
+      await db.sequelize.query(
+        `DELETE FROM payment_cards WHERE id = $1 AND user_id = $2`,
+        { bind: [removeCardId, userId], type: db.Sequelize.QueryTypes.DELETE }
+      );
     }
 
     // Card logic (max 4 cards)
