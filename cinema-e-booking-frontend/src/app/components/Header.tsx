@@ -50,18 +50,22 @@ const Header = () => {
     if (isLoggedIn) {
       logout();
     } else {
-      router.push('/pages/signup');
+      router.push('/pages/login');
     }
   };
 
-  const AuthButton = () => (
-    <button
-      onClick={handleLoginLogout}
-      className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
-    >
-      {isLoggedIn ? `Logout ${user?.name}` : 'Login'}
-    </button>
-  );
+  const AuthButton = () => {
+    const firstName = user?.firstName ?? '';
+
+    return (
+      <button
+        onClick={handleLoginLogout}
+        className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
+      >
+        {isLoggedIn ? `Logout${firstName ? ' ' + firstName : ''}` : 'Login'}
+      </button>
+    );
+  };
 
   return (
     <>
