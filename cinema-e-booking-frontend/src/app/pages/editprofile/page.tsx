@@ -50,11 +50,21 @@ export default function EditProfilePage() {
     paymentCards: [] as PaymentCard[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [cardForm, setCardForm] = useState({ cardType: 'Visa', cardNumber: '', expiry: '', name: '' });
+  const [cardForm, setCardForm] = useState({ cardType: 'Visa', cardNumber: '', expiry: '' });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     apiService.getProfile().then((data: any) => {
+      // Map backend cards to frontend paymentCards
+      const paymentCards = Array.isArray(data.cards)
+        ? data.cards.map((card: any) => ({
+            id: card.id,
+            cardType: card.card_type,
+            cardNumber: '',
+            expiry: card.expiration_date,
+          }))
+        : [];
+
       setProfile({
         email: data.user.email,
         firstName: data.user.first_name,
@@ -69,13 +79,7 @@ export default function EditProfilePage() {
               country: data.address.country || 'USA',
             }
           : { street: '', city: '', state: '', zip: '', country: 'USA' },
-        paymentCards: (data.cards || []).map((card: any) => ({
-          id: card.id,
-          cardType: card.card_type,
-          cardNumber: '', // not returned for security
-          expiry: card.expiration_date,
-          name: '', // not returned for security
-        })),
+        paymentCards,
       });
       setForm({
         firstName: data.user.first_name,
@@ -91,13 +95,7 @@ export default function EditProfilePage() {
               country: data.address.country || 'USA',
             }
           : { street: '', city: '', state: '', zip: '', country: 'USA' },
-        paymentCards: (data.cards || []).map((card: any) => ({
-          id: card.id,
-          cardType: card.card_type,
-          cardNumber: '', // not returned for security
-          expiry: card.expiration_date,
-          name: '', // not returned for security
-        })),
+        paymentCards,
       });
       setLoading(false);
     });
@@ -167,7 +165,7 @@ export default function EditProfilePage() {
       setError('You can only store up to 4 payment cards.');
       return;
     }
-    if (!cardForm.cardNumber || !cardForm.expiry) {
+    if (!cardForm.cardNumber || !cardForm.expiry || !cardForm.cardType) {
       setError('Please fill out all card fields.');
       return;
     }
@@ -175,22 +173,23 @@ export default function EditProfilePage() {
       await apiService.addPaymentCard({
         cardType: cardForm.cardType,
         cardNumber: cardForm.cardNumber,
-        expiry: cardForm.expiry,
         expirationDate: cardForm.expiry,
       });
       // Refresh cards
       const data = await apiService.getProfile();
+      const paymentCards = Array.isArray(data.cards)
+        ? data.cards.map((card: any) => ({
+            id: card.id,
+            cardType: card.card_type,
+            cardNumber: '',
+            expiry: card.expiration_date,
+          }))
+        : [];
       setForm(prev => ({
         ...prev,
-        paymentCards: (data.cards || []).map((card: any) => ({
-          id: card.id,
-          cardType: card.card_type,
-          cardNumber: '',
-          expiry: card.expiration_date,
-          name: '',
-        })),
+        paymentCards,
       }));
-      setCardForm({ cardType: 'Visa', cardNumber: '', expiry: '', name: '' });
+      setCardForm({ cardType: 'Visa', cardNumber: '', expiry: '' });
       setError(null);
     } catch (err) {
       setError('Failed to add card.');
@@ -201,15 +200,17 @@ export default function EditProfilePage() {
     try {
       await apiService.removePaymentCard(id);
       const data = await apiService.getProfile();
+      const paymentCards = Array.isArray(data.cards)
+        ? data.cards.map((card: any) => ({
+            id: card.id,
+            cardType: card.card_type,
+            cardNumber: '',
+            expiry: card.expiration_date,
+          }))
+        : [];
       setForm(prev => ({
         ...prev,
-        paymentCards: (data.cards || []).map((card: any) => ({
-          id: card.id,
-          cardType: card.card_type,
-          cardNumber: '',
-          expiry: card.expiration_date,
-          name: '',
-        })),
+        paymentCards,
       }));
     } catch (err) {
       setError('Failed to remove card.');

@@ -29,14 +29,15 @@ export interface Address {
   city: string;
   state: string;
   zip: string;
+  country?: string;
 }
 
 export interface PaymentCard {
   id: string;
-  cardType?: string;
+  cardType: string;
   cardNumber?: string;
-  expiry: string;
-  name?: string;
+  expiry: string; // MM/YY
+  expirationDate?: string; // for backend compatibility
 }
 
 export interface UserProfile {
@@ -114,13 +115,7 @@ class ApiService {
     password: string;
     phone?: string;
     promoOptIn?: boolean;
-    address?: {
-      street: string;
-      city: string;
-      state: string;
-      zip: string;
-      country?: string;
-    };
+    address?: Address;
     cards?: Array<{
       cardType: string;
       cardNumber: string;
@@ -182,7 +177,11 @@ class ApiService {
   }
 
   // Add a payment card
-  async addPaymentCard(card: PaymentCard): Promise<any> {
+  async addPaymentCard(card: {
+    cardType: string;
+    cardNumber: string;
+    expirationDate: string;
+  }): Promise<any> {
     return this.fetchApi('/api/profile/edit', {
       method: 'PUT',
       body: JSON.stringify({ card }),
