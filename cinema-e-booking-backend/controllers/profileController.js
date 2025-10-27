@@ -37,10 +37,10 @@ const getProfile = async (req, res) => {
 // PUT /api/profile/edit
 const updateProfile = async (req, res) => {
   const userId = req.user.id;
-  const { firstName, lastName, password, address, card, promoOptIn } = req.body;
+  const { firstName, lastName, password, currentPassword, address, card, promoOptIn } = req.body;
 
   try {
-    // ✅ Update name and promo preference
+    // Update name and promo preference
     await db.sequelize.query(
       `UPDATE users SET 
          first_name = COALESCE($1, first_name),
@@ -48,11 +48,33 @@ const updateProfile = async (req, res) => {
          promo_opt_in = COALESCE($3, promo_opt_in),
          updated_at = NOW()
        WHERE id = $4`,
-      { bind: [firstName, lastName, promoOptIn, userId], type: db.Sequelize.QueryTypes.UPDATE }
+      { bind: [
+          firstName || null, 
+          lastName || null, 
+          promoOptIn !== undefined ? promoOptIn : null, 
+          userId
+        ], 
+        type: db.Sequelize.QueryTypes.UPDATE 
+      }
     );
 
-    // ✅ Update password if provided
+    // Update password if provided
     if (password) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: 'Current password is required.' });
+      }
+      // Get the user's password hash from DB
+      const [user] = await db.sequelize.query(
+        `SELECT password_hash FROM users WHERE id = $1`,
+        { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
+      );
+      const passwordMatch = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!passwordMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect.' });
+      }
+      if (currentPassword === password) {
+        return res.status(400).json({ message: 'New password cannot be the same as current password.' });
+      }
       const hashed = await bcrypt.hash(password, 10);
       await db.sequelize.query(
         `UPDATE users SET password_hash = $1 WHERE id = $2`,
@@ -60,7 +82,7 @@ const updateProfile = async (req, res) => {
       );
     }
 
-    // ✅ Address logic (only one per user)
+    // Address logic (only one per user)
     if (address && address.street) {
       const existingAddress = await db.sequelize.query(
         `SELECT id FROM addresses WHERE user_id=$1`,
@@ -83,7 +105,7 @@ const updateProfile = async (req, res) => {
       }
     }
 
-    // ✅ Card logic (max 4 cards)
+    // Card logic (max 4 cards)
     if (card && card.cardNumber) {
       const existingCards = await db.sequelize.query(
         `SELECT COUNT(*) AS count FROM payment_cards WHERE user_id=$1`,
@@ -96,7 +118,8 @@ const updateProfile = async (req, res) => {
       }
 
       const algorithm = 'aes-256-cbc';
-      const key = crypto.scryptSync(process.env.CARD_SECRET, 'salt', 32);
+      const cardSecret = process.env.CARD_ENCRYPTION_KEY_BASE64;
+      const key = crypto.scryptSync(cardSecret, 'salt', 32);
       const iv = crypto.randomBytes(16);
       let cipher = crypto.createCipheriv(algorithm, key, iv);
       let encrypted = cipher.update(card.cardNumber, 'utf8', 'hex');
