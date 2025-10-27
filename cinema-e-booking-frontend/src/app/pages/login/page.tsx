@@ -8,7 +8,6 @@ import { useUser } from '../../contexts/UserContext';
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,9 +27,9 @@ const LoginPage = () => {
       return;
     }
 
-    setIsSubmitting(true);
+      setIsSubmitting(true);
     try {
-      const res = await apiService.loginUser({ email, password, rememberMe });
+      const res = await apiService.loginUser({ email, password });
       const tokens = { accessToken: res.accessToken, refreshToken: res.refreshToken };
       const user = { id: '', email, firstName: '', lastName: '', role: res.role };
       login(user, tokens);
@@ -86,16 +85,7 @@ const LoginPage = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="inline-flex items-center text-white/80">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2"
-                />
-                Remember me
-              </label>
-
+              <div />
               <a href="/pages/forgot-password" className="text-white/70 hover:underline">Forgot password?</a>
             </div>
 
