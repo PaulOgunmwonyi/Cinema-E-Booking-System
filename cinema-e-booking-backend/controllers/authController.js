@@ -278,6 +278,12 @@ const resetPassword = async (req, res) => {
 
     const resetRecord = results[0];
 
+    // Validate password strength server-side as well: at least 8 chars, uppercase, lowercase, number
+    const passwordPolicy = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}/;
+    if (!passwordPolicy.test(newPassword)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number.' });
+    }
+
     // Hash new password using bcrypt and store the resulting hash directly
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);

@@ -27,8 +27,10 @@ export default function ResetPasswordPage() {
     setMessage(null);
 
     if (!token) return;
-    if (password.length < 6) return setError('Password must be at least 6 characters.');
-    if (password !== confirm) return setError('Passwords do not match.');
+  // Enforce password policy: at least 8 characters, includes uppercase, lowercase and number
+  const passwordPolicy = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}/;
+  if (!passwordPolicy.test(password)) return setError('Password must be at least 8 characters and include uppercase, lowercase, and a number.');
+  if (password !== confirm) return setError('Passwords do not match.');
 
     setLoading(true);
     try {
