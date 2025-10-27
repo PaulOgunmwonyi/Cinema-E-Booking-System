@@ -112,6 +112,7 @@ export default function Home() {
   const [movies, setMovies] = useState<ApiMovie[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showProfileUpdated, setShowProfileUpdated] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -120,6 +121,11 @@ export default function Home() {
       setShowSuccess(true);
       // Hide success message after 5 seconds
       setTimeout(() => setShowSuccess(false), 5000);
+    }
+
+    if (searchParams.get('profileUpdated') === 'true') {
+      setShowProfileUpdated(true);
+      setTimeout(() => setShowProfileUpdated(false), 5000);
     }
 
     apiService.getMovies().then((data) => {
@@ -156,6 +162,14 @@ export default function Home() {
         <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
           <p className="text-green-400 text-center">
             🎉 Welcome! Your account has been successfully created and verified. You can now book tickets!
+          </p>
+        </div>
+      )}
+
+      {showProfileUpdated && (
+        <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
+          <p className="text-blue-400 text-center">
+            Your profile changes have been saved!
           </p>
         </div>
       )}
