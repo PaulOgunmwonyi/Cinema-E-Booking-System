@@ -49,6 +49,8 @@ const Header = () => {
   const handleLoginLogout = () => {
     if (isLoggedIn) {
       logout();
+      // After logging out, redirect the user back to the home page
+      router.push('/');
     } else {
       router.push('/pages/login');
     }

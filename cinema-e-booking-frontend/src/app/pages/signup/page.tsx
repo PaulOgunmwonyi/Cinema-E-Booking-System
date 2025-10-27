@@ -325,7 +325,8 @@ const SignupPage = () => {
 
   const handleVerificationSuccess = () => {
     setShowVerification(false);
-    router.push('/?registered=true');
+    // After successful verification, redirect the user to the login page
+    router.push('/pages/login?registered=true');
   };
 
   const formatCardNumber = (value: string) => {
