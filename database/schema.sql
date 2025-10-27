@@ -46,6 +46,7 @@ CREATE TABLE halls (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   description TEXT,
+  seats INT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -58,6 +59,7 @@ CREATE TABLE shows (
   hall_id uuid NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
   start_time TIMESTAMPTZ NOT NULL,
   end_time   TIMESTAMPTZ NOT NULL,
+  duration_minutes INT GENERATED ALWAYS AS (EXTRACT(EPOCH FROM (end_time - start_time)) / 60) STORED,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT now(),
   CHECK (end_time > start_time)
@@ -80,6 +82,7 @@ CREATE TABLE users (
   phone VARCHAR(20),
   is_active BOOLEAN DEFAULT FALSE,  
   is_admin BOOLEAN DEFAULT FALSE,
+  is_suspended BOOLEAN DEFAULT FALSE,
   promo_opt_in BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -94,8 +97,8 @@ CREATE TABLE roles (
 INSERT INTO roles (name) 
   SELECT v FROM (VALUES('user'),('admin')) AS t(v);
 
-INSERT INTO users (first_name, last_name, email, password_hash, is_admin, is_active)
-VALUES ('Admin', 'User', 'admin@example.com', crypt('admin123', gen_salt('bf')), true, true);
+INSERT INTO users (first_name, last_name, email, password_hash, is_admin, is_active, is_suspended)
+VALUES ('Admin', 'User', 'admin@example.com', crypt('admin123', gen_salt('bf')), true, true, false);
 
 
 -- Email confirmation tokens

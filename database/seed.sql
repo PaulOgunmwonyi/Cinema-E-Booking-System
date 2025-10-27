@@ -91,8 +91,8 @@ SELECT id, (SELECT id FROM genres WHERE name = 'Comedy') FROM movies WHERE title
 -- =========================
 -- Halls
 -- =========================
-INSERT INTO halls (name, description) VALUES
-  ('Main Hall', 'Primary auditorium with 200 seats');
+INSERT INTO halls (name, description, seats) VALUES
+  ('Main Hall', 'Primary auditorium with 200 seats', 200);
 
 -- =========================
 -- Shows
