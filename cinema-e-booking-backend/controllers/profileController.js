@@ -75,7 +75,7 @@ const updateProfile = async (req, res) => {
         );
       } else {
         await db.sequelize.query(
-          `INSERT INTO addresses (user_id, street, city, state, zip)
+          `INSERT INTO addresses (user_id, line1, city, state, zip)
            VALUES ($1, $2, $3, $4, $5)`,
           { bind: [userId, address.street, address.city, address.state, address.zip], type: db.Sequelize.QueryTypes.INSERT }
         );
@@ -85,7 +85,7 @@ const updateProfile = async (req, res) => {
     // ✅ Card logic (max 4 cards)
     if (card && card.cardNumber) {
       const existingCards = await db.sequelize.query(
-        `SELECT COUNT(*) FROM payment_cards WHERE user_id=$1`,
+        `SELECT COUNT(*) AS count FROM payment_cards WHERE user_id=$1`,
         { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
       );
 

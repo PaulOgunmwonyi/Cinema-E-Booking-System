@@ -84,7 +84,7 @@ const Header = () => {
               </Link>
             </div>
 
-            {/* Right side - Search and Auth */}
+            {/* Right side - Search, Edit Profile, and Auth */}
             <div className="flex items-center space-x-4 relative">
               <button
                 ref={filterButtonRef}
@@ -114,6 +114,16 @@ const Header = () => {
                   </svg>
                 </button>
               </form>
+
+              {/* Show Edit Profile button if logged in */}
+              {isLoggedIn && (
+                <Link
+                  href="/pages/editprofile"
+                  className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
+                >
+                  Edit Profile
+                </Link>
+              )}
 
               <AuthButton />
             </div>
