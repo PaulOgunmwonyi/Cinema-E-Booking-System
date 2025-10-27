@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const db = require('../models');
+const { sendEmail } = require('../services/emailService'); // <-- import sendEmail
 
 // GET /api/profile/me
 const getProfile = async (req, res) => {
@@ -108,7 +109,24 @@ const updateProfile = async (req, res) => {
       );
     }
 
-    res.status(200).json({ message: 'Profile updated successfully.' });
+    // ✅ Fetch user's email for notification
+    const [user] = await db.sequelize.query(
+      `SELECT email, first_name FROM users WHERE id = $1`,
+      { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
+    );
+
+    // ✅ Send notification email
+    await sendEmail({
+      to: user.email,
+      subject: 'Your Cinema E-Booking profile was updated',
+      html: `
+        <h2>Hello ${user.first_name},</h2>
+        <p>Your profile information has been changed.</p>
+        <p>If you did not make this change, please contact support immediately.</p>
+      `,
+    });
+
+    res.status(200).json({ message: 'Profile updated successfully. Notification email sent.' });
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error updating profile.' });
