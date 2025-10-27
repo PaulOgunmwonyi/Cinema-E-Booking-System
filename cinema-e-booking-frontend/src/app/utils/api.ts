@@ -24,14 +24,54 @@ export interface Movie {
   Shows: Show[];
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+export interface PaymentCard {
+  id: string;
+  cardType?: string;
+  cardNumber?: string;
+  expiry: string;
+  name?: string;
+}
+
+export interface UserProfile {
+  email: string;
+  firstName: string;
+  lastName: string;
+  promotions: boolean;
+  address?: Address;
+  paymentCards: PaymentCard[];
+}
+
+function getAccessToken() {
+  const tokens = localStorage.getItem('cinema_tokens');
+  if (!tokens) return null;
+  try {
+    return JSON.parse(tokens).accessToken;
+  } catch {
+    return null;
+  }
+}
+
 class ApiService {
-  private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async fetchApi<T>(endpoint: string, options?: RequestInit, auth: boolean = false): Promise<T> {
+    const accessToken = auth ? getAccessToken() : null;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(options?.headers as Record<string, string> || {}),
+    };
+
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
         ...options,
+        headers,
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -120,6 +160,40 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+  }
+
+  // Get current user's profile
+  async getProfile(): Promise<UserProfile> {
+    return this.fetchApi<UserProfile>('/api/profile/me', { method: 'GET' }, true);
+  }
+
+  // Update current user's profile
+  async updateProfile(data: {
+    firstName?: string;
+    lastName?: string;
+    password?: string;
+    address?: Address;
+    promoOptIn?: boolean;
+  }): Promise<any> {
+    return this.fetchApi('/api/profile/edit', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true);
+  }
+
+  // Add a payment card
+  async addPaymentCard(card: PaymentCard): Promise<any> {
+    return this.fetchApi('/api/profile/edit', {
+      method: 'PUT',
+      body: JSON.stringify({ card }),
+    }, true);
+  }
+
+  // Remove a payment card (if you have a backend endpoint for this)
+  async removePaymentCard(cardId: string): Promise<any> {
+    return this.fetchApi(`/api/payment-cards/${cardId}`, {
+      method: 'DELETE',
+    }, true);
   }
 }
 
