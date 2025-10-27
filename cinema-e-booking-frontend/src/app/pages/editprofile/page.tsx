@@ -269,7 +269,7 @@ export default function EditProfilePage() {
         promoOptIn: form.promotions,
         address: addressFilled ? { street, city, state, zip, country } : undefined,
       });
-      router.push('/');
+      router.push('/?profileUpdated=true'); // <-- add query param
     } catch (err) {
       setError('Failed to update profile. Please try again.');
     }
