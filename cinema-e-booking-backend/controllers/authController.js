@@ -235,7 +235,8 @@ const forgotPassword = async (req, res) => {
       { bind: [user.id, token, expiresAt], type: db.Sequelize.QueryTypes.INSERT }
     );
 
-    const resetLink = `http://localhost:5001/reset-password?token=${token}`; 
+  const frontendBase = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+  const resetLink = `${frontendBase}/pages/reset-password?token=${token}`;
 
     await sendEmail({
       to: user.email,
@@ -277,12 +278,13 @@ const resetPassword = async (req, res) => {
 
     const resetRecord = results[0];
 
-    // Hash new password
+    // Hash new password using bcrypt and store the resulting hash directly
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
+    // Store the bcrypt hash directly in the password_hash column (login uses bcrypt.compare)
     await db.sequelize.query(
-      `UPDATE users SET password_hash=crypt($1, gen_salt('bf')) WHERE id=$2`,
+      `UPDATE users SET password_hash=$1 WHERE id=$2`,
       { bind: [hashedPassword, resetRecord.user_id], type: db.Sequelize.QueryTypes.UPDATE }
     );
 
