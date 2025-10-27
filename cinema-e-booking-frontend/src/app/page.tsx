@@ -128,6 +128,12 @@ export default function Home() {
 
     if (searchParams.get('profileUpdated') === 'true') {
       setShowProfileUpdated(true);
+      // Clear the query param so the banner only appears once (won't reappear on refresh)
+      try {
+        router.replace('/');
+      } catch (e) {
+        // ignore routing errors
+      }
       setTimeout(() => setShowProfileUpdated(false), 5000);
     }
 
