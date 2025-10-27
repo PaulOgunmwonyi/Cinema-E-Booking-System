@@ -52,6 +52,9 @@ export default function EditProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [cardForm, setCardForm] = useState({ cardType: 'Visa', cardNumber: '', expirationDate: '' });
   const [error, setError] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     apiService.getProfile().then((data) => {
@@ -138,11 +141,42 @@ export default function EditProfilePage() {
     }
   };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'currentPassword') {
+      setCurrentPassword(value);
+      if (newPassword && value === newPassword) {
+        setPasswordError('New password cannot be the same as current password.');
+      } else {
+        setPasswordError(null);
+      }
+    } else if (name === 'newPassword') {
+      setNewPassword(value);
+      if (currentPassword && value === currentPassword) {
+        setPasswordError('New password cannot be the same as current password.');
+      } else {
+        setPasswordError(null);
+      }
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!form.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!form.lastName.trim()) newErrors.lastName = 'Last name is required';
+
+    // Password validation
+    if (newPassword) {
+      if (!currentPassword) {
+        setPasswordError('Please enter your current password.');
+        return false;
+      }
+      if (currentPassword === newPassword) {
+        setPasswordError('New password cannot be the same as current password.');
+        return false;
+      }
+    }
 
     // Address validation (if any field is filled, require all)
     const { street, city, state, zip } = form.address;
@@ -157,7 +191,7 @@ export default function EditProfilePage() {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0 && !passwordError;
   };
 
   const handleAddCard = async () => {
@@ -220,6 +254,7 @@ export default function EditProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setPasswordError(null);
 
     if (!validateForm()) return;
 
@@ -230,13 +265,21 @@ export default function EditProfilePage() {
       await apiService.updateProfile({
         firstName: form.firstName,
         lastName: form.lastName,
-        password: form.password,
+        password: newPassword ? newPassword : undefined,
+        currentPassword: newPassword ? currentPassword : undefined,
         promoOptIn: form.promotions,
         address: addressFilled ? { street, city, state, zip, country } : undefined,
       });
-      router.push('/');
-    } catch {
-      setError('Failed to update profile. Please try again.');
+      router.push('/?profileUpdated=true');
+    } catch (err: any) {
+      // Show password error if backend returns it
+      if (err?.message?.toLowerCase().includes('current password')) {
+        setPasswordError(err.message);
+      } else if (err?.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to update profile. Please try again.');
+      }
     }
   };
 
@@ -366,18 +409,29 @@ export default function EditProfilePage() {
 
             {/* Password */}
             <div>
-              <label className="block text-white font-medium mb-2">Password</label>
+              <label className="block text-white font-medium mb-2">Change Password</label>
               <input
                 type="password"
-                name="password"
-                value={form.password}
-                onChange={handleInputChange}
+                name="currentPassword"
+                value={currentPassword}
+                onChange={handlePasswordChange}
+                className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 mb-2"
+                placeholder="Current password"
+                autoComplete="current-password"
+              />
+              <input
+                type="password"
+                name="newPassword"
+                value={newPassword}
+                onChange={handlePasswordChange}
                 className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
-                placeholder="Enter new password"
+                placeholder="New password"
+                autoComplete="new-password"
               />
               <p className="text-white/50 text-xs mt-1">
-                Leave blank to keep your current password.
+                Enter your current password and a new password to change it.
               </p>
+              {passwordError && <p className="text-red-400 text-sm mt-1">{passwordError}</p>}
             </div>
 
             {/* Promotions */}

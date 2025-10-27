@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const db = require('../models');
+const { sendEmail } = require('../services/emailService'); // <-- import sendEmail
 
 // GET /api/profile/me
 const getProfile = async (req, res) => {
@@ -36,7 +37,7 @@ const getProfile = async (req, res) => {
 // PUT /api/profile/edit
 const updateProfile = async (req, res) => {
   const userId = req.user.id;
-  const { firstName, lastName, password, address, card, promoOptIn } = req.body;
+  const { firstName, lastName, password, currentPassword, address, card, promoOptIn } = req.body;
 
   try {
     // Update name and promo preference
@@ -59,6 +60,21 @@ const updateProfile = async (req, res) => {
 
     // Update password if provided
     if (password) {
+      if (!currentPassword) {
+        return res.status(400).json({ message: 'Current password is required.' });
+      }
+      // Get the user's password hash from DB
+      const [user] = await db.sequelize.query(
+        `SELECT password_hash FROM users WHERE id = $1`,
+        { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
+      );
+      const passwordMatch = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!passwordMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect.' });
+      }
+      if (currentPassword === password) {
+        return res.status(400).json({ message: 'New password cannot be the same as current password.' });
+      }
       const hashed = await bcrypt.hash(password, 10);
       await db.sequelize.query(
         `UPDATE users SET password_hash = $1 WHERE id = $2`,
@@ -116,7 +132,24 @@ const updateProfile = async (req, res) => {
       );
     }
 
-    res.status(200).json({ message: 'Profile updated successfully.' });
+    // ✅ Fetch user's email for notification
+    const [user] = await db.sequelize.query(
+      `SELECT email, first_name FROM users WHERE id = $1`,
+      { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
+    );
+
+    // ✅ Send notification email
+    await sendEmail({
+      to: user.email,
+      subject: 'Your Cinema E-Booking profile was updated',
+      html: `
+        <h2>Hello ${user.first_name},</h2>
+        <p>Your profile information has been changed.</p>
+        <p>If you did not make this change, please contact support immediately.</p>
+      `,
+    });
+
+    res.status(200).json({ message: 'Profile updated successfully. Notification email sent.' });
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ message: 'Server error updating profile.' });
