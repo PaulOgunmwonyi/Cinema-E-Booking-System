@@ -36,8 +36,7 @@ export interface PaymentCard {
   id: string;
   cardType: string;
   cardNumber?: string;
-  expiry: string; // MM/YY
-  expirationDate?: string; // for backend compatibility
+  expirationDate?: string; 
 }
 
 export interface UserProfile {
@@ -47,6 +46,28 @@ export interface UserProfile {
   promotions: boolean;
   address?: Address;
   paymentCards: PaymentCard[];
+}
+
+export interface BackendProfileResponse {
+  user: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    promo_opt_in: boolean;
+  };
+  address?: {
+    id: string;
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  cards: Array<{
+    id: string;
+    card_type: string;
+    expiration_date: string;
+  }>;
 }
 
 function getAccessToken() {
@@ -171,8 +192,8 @@ class ApiService {
     });
   }
   // Get current user's profile
-  async getProfile(): Promise<UserProfile> {
-    return this.fetchApi<UserProfile>('/api/profile/me', { method: 'GET' }, true);
+  async getProfile(): Promise<BackendProfileResponse> {
+    return this.fetchApi<BackendProfileResponse>('/api/profile/me', { method: 'GET' }, true);
   }
 
   // Update current user's profile
@@ -182,7 +203,7 @@ class ApiService {
     password?: string;
     address?: Address;
     promoOptIn?: boolean;
-  }): Promise<any> {
+  }): Promise<{ message: string }> {
     return this.fetchApi('/api/profile/edit', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -194,7 +215,7 @@ class ApiService {
     cardType: string;
     cardNumber: string;
     expirationDate: string;
-  }): Promise<any> {
+  }): Promise<{ message: string }> {
     return this.fetchApi('/api/profile/edit', {
       method: 'PUT',
       body: JSON.stringify({ card }),
@@ -202,7 +223,7 @@ class ApiService {
   }
 
   // Remove a payment card (if you have a backend endpoint for this)
-  async removePaymentCard(cardId: string): Promise<any> {
+  async removePaymentCard(cardId: string): Promise<{ message: string }> {
     return this.fetchApi(`/api/payment-cards/${cardId}`, {
       method: 'DELETE',
     }, true);

@@ -50,18 +50,18 @@ export default function EditProfilePage() {
     paymentCards: [] as PaymentCard[],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [cardForm, setCardForm] = useState({ cardType: 'Visa', cardNumber: '', expiry: '' });
+  const [cardForm, setCardForm] = useState({ cardType: 'Visa', cardNumber: '', expirationDate: '' });
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiService.getProfile().then((data: any) => {
+    apiService.getProfile().then((data) => {
       // Map backend cards to frontend paymentCards
       const paymentCards = Array.isArray(data.cards)
-        ? data.cards.map((card: any) => ({
+        ? data.cards.map((card) => ({
             id: card.id,
             cardType: card.card_type,
             cardNumber: '',
-            expiry: card.expiration_date,
+            expirationDate: card.expiration_date,
           }))
         : [];
 
@@ -76,7 +76,7 @@ export default function EditProfilePage() {
               city: data.address.city || '',
               state: data.address.state || '',
               zip: data.address.zip || '',
-              country: data.address.country || 'USA',
+              country: 'USA',
             }
           : { street: '', city: '', state: '', zip: '', country: 'USA' },
         paymentCards,
@@ -92,7 +92,7 @@ export default function EditProfilePage() {
               city: data.address.city || '',
               state: data.address.state || '',
               zip: data.address.zip || '',
-              country: data.address.country || 'USA',
+              country: 'USA',
             }
           : { street: '', city: '', state: '', zip: '', country: 'USA' },
         paymentCards,
@@ -126,7 +126,7 @@ export default function EditProfilePage() {
     if (name === 'cardNumber') {
       formattedValue = formatCardNumber(value);
     }
-    if (name === 'expiry') {
+    if (name === 'expirationDate') {
       formattedValue = formatExpirationDate(value);
     }
     setCardForm(prev => ({
@@ -165,7 +165,7 @@ export default function EditProfilePage() {
       setError('You can only store up to 4 payment cards.');
       return;
     }
-    if (!cardForm.cardNumber || !cardForm.expiry || !cardForm.cardType) {
+    if (!cardForm.cardNumber || !cardForm.expirationDate || !cardForm.cardType) {
       setError('Please fill out all card fields.');
       return;
     }
@@ -173,25 +173,25 @@ export default function EditProfilePage() {
       await apiService.addPaymentCard({
         cardType: cardForm.cardType,
         cardNumber: cardForm.cardNumber,
-        expirationDate: cardForm.expiry,
+        expirationDate: cardForm.expirationDate,
       });
       // Refresh cards
       const data = await apiService.getProfile();
       const paymentCards = Array.isArray(data.cards)
-        ? data.cards.map((card: any) => ({
+        ? data.cards.map((card) => ({
             id: card.id,
             cardType: card.card_type,
             cardNumber: '',
-            expiry: card.expiration_date,
+            expirationDate: card.expiration_date,
           }))
         : [];
       setForm(prev => ({
         ...prev,
         paymentCards,
       }));
-      setCardForm({ cardType: 'Visa', cardNumber: '', expiry: '' });
+      setCardForm({ cardType: 'Visa', cardNumber: '', expirationDate: '' });
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to add card.');
     }
   };
@@ -201,18 +201,18 @@ export default function EditProfilePage() {
       await apiService.removePaymentCard(id);
       const data = await apiService.getProfile();
       const paymentCards = Array.isArray(data.cards)
-        ? data.cards.map((card: any) => ({
+        ? data.cards.map((card) => ({
             id: card.id,
             cardType: card.card_type,
             cardNumber: '',
-            expiry: card.expiration_date,
+            expirationDate: card.expiration_date,
           }))
         : [];
       setForm(prev => ({
         ...prev,
         paymentCards,
       }));
-    } catch (err) {
+    } catch {
       setError('Failed to remove card.');
     }
   };
@@ -235,7 +235,7 @@ export default function EditProfilePage() {
         address: addressFilled ? { street, city, state, zip, country } : undefined,
       });
       router.push('/');
-    } catch (err) {
+    } catch {
       setError('Failed to update profile. Please try again.');
     }
   };
@@ -399,11 +399,11 @@ export default function EditProfilePage() {
             <div>
               <label className="block text-white font-medium mb-2">Payment Cards</label>
               <div className="space-y-2 mb-2">
-                {form.paymentCards.map((card, idx) => (
+                {form.paymentCards.map((card) => (
                   <div key={card.id} className="border border-white/20 rounded-lg p-4 space-y-2 bg-gray-800">
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-sm text-white">{card.cardType || 'Card'}</span>
-                      <span className="ml-2 text-xs text-gray-400">{card.expiry}</span>
+                      <span className="ml-2 text-xs text-gray-400">{card.expirationDate}</span>
                       <button
                         type="button"
                         className="text-red-400 hover:text-red-300 font-bold px-2 py-1 rounded"
@@ -435,8 +435,8 @@ export default function EditProfilePage() {
                       <label className="block text-white font-medium mb-2">Expiration Date (MM/YY)</label>
                       <input
                         type="text"
-                        name="expiry"
-                        value={cardForm.expiry}
+                        name="expirationDate"
+                        value={cardForm.expirationDate}
                         onChange={handleCardFormChange}
                         className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
                         placeholder="MM/YY"
