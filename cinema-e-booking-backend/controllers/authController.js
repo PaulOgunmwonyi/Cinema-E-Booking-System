@@ -1,3 +1,4 @@
+const { validationResult } = require('express-validator');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 
@@ -7,7 +8,17 @@ const { signAccessToken, signRefreshToken } = require('../utils/jwt');
 
 // Registration (create user + send confirmation email)
 const registerUser = async (req, res) => {
-  const { firstName, lastName, email, password, phone, promoOptIn, address, cards } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ message: 'Validation failed.', errors: errors.mapped() });
+  }
+
+  let { firstName, lastName, email, password, phone, promoOptIn, address, cards } = req.body;
+
+  email = (email || '').trim().toLowerCase();
+  firstName = (firstName || '').trim();
+  lastName = (lastName || '').trim();
+  phone = (phone || '').trim();
 
   const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); 
 
@@ -20,6 +31,16 @@ const registerUser = async (req, res) => {
 
     if (existingUser.length > 0) {
       return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    if (phone) {
+      const phoneUsers = await db.sequelize.query(
+        'SELECT id FROM users WHERE phone = $1',
+        { bind: [phone], type: db.Sequelize.QueryTypes.SELECT }
+      );
+      if (phoneUsers.length > 0) {
+        return res.status(400).json({ message: 'Phone already in use' });
+      }
     }
 
     const saltRounds = 10;
@@ -51,7 +72,7 @@ const registerUser = async (req, res) => {
             address.city,
             address.state,
             address.zip,
-            address.country || 'USA', // default country if not provided
+            address.country || 'USA', 
           ],
           type: db.Sequelize.QueryTypes.INSERT,
         }
@@ -59,32 +80,49 @@ const registerUser = async (req, res) => {
     }
 
     // Handle optional payment cards (max 3)
-    if (cards && Array.isArray(cards) && cards.length > 0) {
+    if (Array.isArray(cards) && cards.length) {
       const algorithm = 'aes-256-cbc';
       const key = crypto.scryptSync(process.env.CARD_SECRET || 'default-secret', 'salt', 32);
-      
-      for (const card of cards.slice(0, 3)) { // Limit to 3 cards
-        if (card.cardNumber) {
-          const iv = crypto.randomBytes(16);
-          let cipher = crypto.createCipheriv(algorithm, key, iv);
-          let encrypted = cipher.update(card.cardNumber.replace(/\s/g, ''), 'utf8', 'hex');
-          encrypted += cipher.final('hex');
 
-          await db.sequelize.query(
-            `INSERT INTO payment_cards (user_id, card_type, card_number_encrypted, expiration_date, is_default)
-            VALUES ($1, $2, $3, $4, $5)`,
-            { 
-              bind: [
-                user.id, 
-                card.cardType, 
-                `${iv.toString('hex')}:${encrypted}`, 
-                card.expirationDate,
-                card.isDefault || false
-              ], 
-              type: db.Sequelize.QueryTypes.INSERT 
-            }
-          );
+      for (const card of cards.slice(0, 3)) {
+        if (!card || !card.cardNumber) continue;
+
+        const plainNumber = card.cardNumber.replace(/\s/g, '');
+
+        const hash = crypto.createHash('sha256').update(plainNumber).digest('hex');
+
+        const existing = await db.sequelize.query(
+          'SELECT user_id FROM payment_cards WHERE card_number_hash = $1',
+          { bind: [hash], type: db.Sequelize.QueryTypes.SELECT }
+        );
+
+        if (existing.length > 0) {
+          return res.status(400).json({
+            message: 'Card details already exist for another user.'
+          });
         }
+
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(algorithm, key, iv);
+        let encrypted = cipher.update(plainNumber, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+
+        await db.sequelize.query(
+          `INSERT INTO payment_cards
+            (user_id, card_type, card_number_encrypted, card_number_hash, expiration_date, is_default)
+          VALUES ($1, $2, $3, $4, $5, $6)`,
+          {
+            bind: [
+              user.id,
+              card.cardType || null,
+              `${iv.toString('hex')}:${encrypted}`,
+              hash,
+              card.expirationDate || null,
+              !!card.isDefault
+            ],
+            type: db.Sequelize.QueryTypes.INSERT
+          }
+        );
       }
     }
 
@@ -159,7 +197,13 @@ const confirmCode = async (req, res) => {
 
 //  Login User
 const loginUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ message: 'Validation failed.', errors: errors.mapped() });
+  }
+
   const { email, password, rememberMe } = req.body;
+  email = (email || '').trim().toLowerCase();
 
   try {
     
