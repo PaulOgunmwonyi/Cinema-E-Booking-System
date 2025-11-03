@@ -1,8 +1,4 @@
 
--- =========================
--- Enable required extensions
--- =========================
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- =========================
 -- Movies Table
@@ -59,7 +55,7 @@ CREATE TABLE shows (
   hall_id uuid NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
   start_time TIMESTAMPTZ NOT NULL,
   end_time   TIMESTAMPTZ NOT NULL,
-  duration_minutes INT GENERATED ALWAYS AS (EXTRACT(EPOCH FROM (end_time - start_time)) / 60) STORED,
+  duration_minutes INT,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT now(),
   CHECK (end_time > start_time)
@@ -160,4 +156,69 @@ CREATE TABLE payment_cards (
 
 -- index for lookups
 CREATE INDEX idx_payment_cards_user_id ON payment_cards(user_id);
+
+-- Ticket Prices and Fees
+CREATE TABLE ticket_prices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category TEXT NOT NULL,             
+  price NUMERIC(10,2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE booking_fees (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fee NUMERIC(10,2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Promotions
+CREATE TABLE promotions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL,
+  description TEXT,
+  discount_percent NUMERIC(5,2),       
+  discount_amount NUMERIC(10,2),       
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Hall seats (seat mapping)
+CREATE TABLE hall_seats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hall_id UUID REFERENCES halls(id) ON DELETE CASCADE,
+  row_label TEXT NOT NULL,             
+  seat_number INT NOT NULL,            
+  is_available BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (hall_id, row_label, seat_number)
+);
+
+-- Bookings
+CREATE TABLE bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  show_id UUID REFERENCES shows(id) ON DELETE CASCADE,
+  booking_number SERIAL UNIQUE,
+  total_amount NUMERIC(10,2) NOT NULL,
+  promotion_id UUID REFERENCES promotions(id) ON DELETE SET NULL,
+  status TEXT DEFAULT 'CONFIRMED',     
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Tickets
+CREATE TABLE tickets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+  show_id UUID REFERENCES shows(id) ON DELETE CASCADE,
+  seat_number TEXT NOT NULL,
+  ticket_category TEXT NOT NULL,      
+  price NUMERIC(10,2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
