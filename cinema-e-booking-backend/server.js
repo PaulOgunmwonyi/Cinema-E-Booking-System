@@ -6,6 +6,8 @@ const db = require('./models');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 app.use(express.json());
@@ -19,6 +21,8 @@ app.use(bodyParser.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is working ");

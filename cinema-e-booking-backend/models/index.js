@@ -21,11 +21,15 @@ db.Movie = require('./Movie')(sequelize);
 db.Genre = require('./Genre')(sequelize);
 db.Show = require('./Show')(sequelize);
 db.MovieGenre = require('./MovieGenre')(sequelize);
+db.Showroom  = require('./Showroom')(sequelize);
+db.Promotion = require('./Promotion')(sequelize);
 
 // Associations
 db.Movie.belongsToMany(db.Genre, { through: db.MovieGenre, foreignKey: 'movie_id' });
 db.Genre.belongsToMany(db.Movie, { through: db.MovieGenre, foreignKey: 'genre_id' });
 db.Movie.hasMany(db.Show, { foreignKey: 'movie_id' });
 db.Show.belongsTo(db.Movie, { foreignKey: 'movie_id' });
+db.Showroom.hasMany(db.Show, { foreignKey: 'showroom_id' });
+db.Show.belongsTo(db.Showroom, { foreignKey: 'showroom_id' });
 
 module.exports = db;

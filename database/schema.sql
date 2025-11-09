@@ -22,7 +22,7 @@ CREATE TABLE movies (
 -- Genres Table
 -- =========================
 CREATE TABLE genres (
-  id SERIAL PRIMARY KEY,
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE
 );
 
@@ -52,7 +52,7 @@ CREATE TABLE halls (
 CREATE TABLE shows (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   movie_id uuid NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
-  hall_id uuid NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
+  showroom_id uuid NOT NULL REFERENCES showrooms(id) ON DELETE CASCADE,
   start_time TIMESTAMPTZ NOT NULL,
   end_time   TIMESTAMPTZ NOT NULL,
   duration_minutes INT,
@@ -177,6 +177,7 @@ CREATE TABLE booking_fees (
 CREATE TABLE promotions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT UNIQUE NOT NULL,
+  title TEXT,
   description TEXT,
   discount_percent NUMERIC(5,2),       
   discount_amount NUMERIC(10,2),       
@@ -190,7 +191,7 @@ CREATE TABLE promotions (
 -- Hall seats (seat mapping)
 CREATE TABLE hall_seats (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  hall_id UUID REFERENCES halls(id) ON DELETE CASCADE,
+  hall_id UUID REFERENCES showrooms(id) ON DELETE CASCADE,
   row_label TEXT NOT NULL,             
   seat_number INT NOT NULL,            
   is_available BOOLEAN DEFAULT TRUE,
@@ -221,4 +222,16 @@ CREATE TABLE tickets (
   price NUMERIC(10,2) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Showrooms
+CREATE TABLE showrooms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL,
+  capacity INT NOT NULL CHECK (capacity > 0 AND capacity <= 5000)
+);
+
+-- Prevent scheduling conflicts: one show per showroom per exact start_time
+CREATE UNIQUE INDEX uniq_show_showroom_start
+  ON shows (showroom_id, start_time);
+
 
