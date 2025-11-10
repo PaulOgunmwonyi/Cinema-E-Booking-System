@@ -66,8 +66,6 @@ const addShowtime = async (req, res) => {
     if (!movie) return res.status(400).json({ message: 'Movie not found' });
     if (!showroom) return res.status(400).json({ message: 'Showroom not found' });
 
-    // Conflict: exact same start_time in same showroom blocked by unique index.
-    // To give nice error before DB throws:
     const conflict = await db.Show.findOne({ where: { showroom_id, start_time } });
     if (conflict) {
       return res.status(409).json({ message: 'Scheduling conflict: this showroom already has a show at that time.' });
@@ -76,7 +74,7 @@ const addShowtime = async (req, res) => {
     const show = await db.Show.create({ movie_id, showroom_id, start_time, end_time });
     return res.status(201).json({ message: 'Showtime added', show });
   } catch (e) {
-    // If unique index triggers, return a friendly message
+    
     if (String(e).includes('uniq_show_showroom_start')) {
       return res.status(409).json({ message: 'Scheduling conflict: this showroom already has a show at that time.' });
     }
@@ -85,7 +83,7 @@ const addShowtime = async (req, res) => {
   }
 };
 
-// 4) List showtimes (with joins)
+//List showtimes 
 const listShowtimes = async (req, res) => {
   const shows = await db.Show.findAll({
     include: [ db.Movie, db.Showroom ],
@@ -94,7 +92,7 @@ const listShowtimes = async (req, res) => {
   return res.json({ shows });
 };
 
-// 5) Create promotion
+// Create promotion
 const createPromotion = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(422).json({ message: 'Validation failed.', errors: errors.mapped() });
@@ -113,7 +111,7 @@ const createPromotion = async (req, res) => {
   }
 };
 
-// 6) Send promotion (email only to promoOptIn users)
+// Send promotion 
 const sendPromotion = async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(422).json({ message: 'code is required' });
@@ -122,7 +120,6 @@ const sendPromotion = async (req, res) => {
     const promo = await db.Promotion.findOne({ where: { code } });
     if (!promo) return res.status(404).json({ message: 'Promotion not found' });
 
-    // NOTE: you don't have a Sequelize User model; use raw query against your users table
     const subscribers = await db.sequelize.query(
       `SELECT email, first_name FROM users WHERE promo_opt_in = true AND is_active = true`,
       { type: db.Sequelize.QueryTypes.SELECT }
@@ -136,7 +133,6 @@ const sendPromotion = async (req, res) => {
       <p><strong>Discount:</strong> ${promo.discount_percent}%</p>
     `;
 
-    // send sequentially for simplicity (you can batch/promise.all with throttling)
     let sent = 0;
     for (const u of subscribers) {
       await sendEmail({

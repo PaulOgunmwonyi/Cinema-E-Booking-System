@@ -1,14 +1,12 @@
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const db = require('../models');
-const { sendEmail } = require('../services/emailService'); // <-- import sendEmail
+const { sendEmail } = require('../services/emailService'); 
 
-// GET /api/profile/me
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Fetch user + address + cards
     const [user] = await db.sequelize.query(
       `SELECT id, first_name, last_name, email, promo_opt_in
        FROM users WHERE id = $1`,
@@ -34,13 +32,11 @@ const getProfile = async (req, res) => {
   }
 };
 
-// PUT /api/profile/edit
 const updateProfile = async (req, res) => {
   const userId = req.user.id;
   const { firstName, lastName, password, currentPassword, address, card, removeCardId, promoOptIn } = req.body;
 
   try {
-    // Update name and promo preference
     await db.sequelize.query(
       `UPDATE users SET 
          first_name = COALESCE($1, first_name),
@@ -58,12 +54,11 @@ const updateProfile = async (req, res) => {
       }
     );
 
-    // Update password if provided
     if (password) {
       if (!currentPassword) {
         return res.status(400).json({ message: 'Current password is required.' });
       }
-      // Get the user's password hash from DB
+      
       const [user] = await db.sequelize.query(
         `SELECT password_hash FROM users WHERE id = $1`,
         { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
@@ -82,7 +77,6 @@ const updateProfile = async (req, res) => {
       );
     }
 
-    // Address logic (only one per user)
     if (address && address.street) {
       const existingAddress = await db.sequelize.query(
         `SELECT id FROM addresses WHERE user_id=$1`,
@@ -113,7 +107,6 @@ const updateProfile = async (req, res) => {
       );
     }
 
-    // Card logic (max 4 cards)
     if (card && card.cardNumber) {
       const existingCards = await db.sequelize.query(
         `SELECT COUNT(*) AS count FROM payment_cards WHERE user_id=$1`,
@@ -140,13 +133,11 @@ const updateProfile = async (req, res) => {
       );
     }
 
-    // ✅ Fetch user's email for notification
     const [user] = await db.sequelize.query(
       `SELECT email, first_name FROM users WHERE id = $1`,
       { bind: [userId], type: db.Sequelize.QueryTypes.SELECT }
     );
 
-    // ✅ Send notification email
     await sendEmail({
       to: user.email,
       subject: 'Your Cinema E-Booking profile was updated',

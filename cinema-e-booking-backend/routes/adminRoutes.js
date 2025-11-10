@@ -1,4 +1,3 @@
-// cinema-e-booking-backend/routes/adminRoutes.js
 const express = require('express');
 const router = express.Router();
 
@@ -15,9 +14,6 @@ const {
   addShowtime, listShowtimes,
   createPromotion, sendPromotion
 } = require('../controllers/adminController');
-
-// (Optionally add an auth middleware that checks admin)
-// router.use(require('../middleware/requireAdmin'));
 
 router.get('/', adminHome);
 

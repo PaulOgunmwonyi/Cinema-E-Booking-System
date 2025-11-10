@@ -1,20 +1,13 @@
 const db = require('../models');
 const { v4: uuidv4 } = require('uuid');
 
-/**
- * GET /api/bookings/seats/:show_id
- * Returns all seats for the hall linked to the show_id,
- * grouped by row_label with availability info.
- */
 exports.fetchAvailableSeats = async (req, res) => {
   try {
     const show_id = req.params.show_id.trim();
 
-    // find hall (or showroom) for this show
     const show = await db.Show.findByPk(show_id);
     if (!show) return res.status(404).json({ message: 'Show not found' });
 
-    // get hall_id or showroom_id
     const hallId = show.showroom_id;
 
     const seats = await db.sequelize.query(
@@ -32,17 +25,7 @@ exports.fetchAvailableSeats = async (req, res) => {
   }
 };
 
-/**
- * POST /api/bookings/reserve
- * Body:
- * {
- *   "user_id": "uuid",
- *   "show_id": "uuid",
- *   "seat_ids": ["uuid1", "uuid2"],
- *   "ticket_category": "Adult",
- *   "price": 12.50
- * }
- */
+
 exports.reserveSeats = async (req, res) => {
   const t = await db.sequelize.transaction();
   try {
