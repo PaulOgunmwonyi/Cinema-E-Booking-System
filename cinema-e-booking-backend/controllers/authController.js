@@ -322,17 +322,14 @@ const resetPassword = async (req, res) => {
 
     const resetRecord = results[0];
 
-    // Validate password strength server-side as well: at least 8 chars, uppercase, lowercase, number
     const passwordPolicy = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}/;
     if (!passwordPolicy.test(newPassword)) {
       return res.status(400).json({ message: 'Password must be at least 8 characters and include uppercase, lowercase, and a number.' });
     }
 
-    // Hash new password using bcrypt and store the resulting hash directly
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // Store the bcrypt hash directly in the password_hash column (login uses bcrypt.compare)
     await db.sequelize.query(
       `UPDATE users SET password_hash=$1 WHERE id=$2`,
       { bind: [hashedPassword, resetRecord.user_id], type: db.Sequelize.QueryTypes.UPDATE }
@@ -371,7 +368,7 @@ const logoutUser = async (req, res) => {
       { bind: [refreshToken], type: db.Sequelize.QueryTypes.DELETE }
     );
 
-    console.log(`🚪 Logout successful. Refresh token invalidated.`);
+    console.log(`Logout successful. Refresh token invalidated.`);
     res.status(200).json({ message: 'Logged out successfully.' });
   } catch (error) {
     console.error('Error during logout:', error);
