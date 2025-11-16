@@ -1,5 +1,8 @@
 
-
+-- =========================
+-- Enable required extensions
+-- =========================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- =========================
 -- Movies Table
 -- =========================
@@ -31,8 +34,15 @@ CREATE TABLE genres (
 -- =========================
 CREATE TABLE movie_genres_map (
   movie_id uuid REFERENCES movies(id) ON DELETE CASCADE,
-  genre_id INT  REFERENCES genres(id) ON DELETE CASCADE,
+  genre_id uuid REFERENCES genres(id) ON DELETE CASCADE,
   PRIMARY KEY (movie_id, genre_id)
+);
+
+-- Showrooms
+CREATE TABLE showrooms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL,
+  capacity INT NOT NULL CHECK (capacity > 0 AND capacity <= 5000)
 );
 
 -- =========================
@@ -221,13 +231,6 @@ CREATE TABLE tickets (
   ticket_category TEXT NOT NULL,      
   price NUMERIC(10,2) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Showrooms
-CREATE TABLE showrooms (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT UNIQUE NOT NULL,
-  capacity INT NOT NULL CHECK (capacity > 0 AND capacity <= 5000)
 );
 
 -- Prevent scheduling conflicts: one show per showroom per exact start_time
