@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiService, Movie as ApiMovie } from './utils/api';
+import { useUser } from './contexts/UserContext';
 
 function TrailerModal({ url, onClose }: { url: string; onClose: () => void }) {
   return (
@@ -117,6 +118,7 @@ export default function Home() {
   const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isLoggedIn } = useUser();
 
   useEffect(() => {
     // Check if user was redirected from successful registration
@@ -131,7 +133,7 @@ export default function Home() {
       // Clear the query param so the banner only appears once (won't reappear on refresh)
       try {
         router.replace('/');
-      } catch (e) {
+      } catch {
         // ignore routing errors
       }
       setTimeout(() => setShowProfileUpdated(false), 5000);
@@ -139,31 +141,37 @@ export default function Home() {
 
     if (searchParams.get('login') === 'success') {
       setShowLoginSuccess(true);
-      // Clear the query param so refreshing won't re-show the banner
+      // Clear the logout banner flag when logging in
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('showLogoutBanner');
+        }
+      } catch {
+        // ignore sessionStorage errors
+      }
       try {
         router.replace('/');
-      } catch (e) {
+      } catch {
         // ignore routing errors
       }
       setTimeout(() => setShowLoginSuccess(false), 5000);
-    }
-
-    // Show logout banner only when logout was initiated in this session
-    try {
-      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('showLogoutBanner') === '1') {
-        setShowLogoutSuccess(true);
-        setTimeout(() => setShowLogoutSuccess(false), 5000);
-        sessionStorage.removeItem('showLogoutBanner');
+    } else {
+      try {
+        if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('showLogoutBanner') === '1') {
+          setShowLogoutSuccess(true);
+          setTimeout(() => setShowLogoutSuccess(false), 5000);
+          sessionStorage.removeItem('showLogoutBanner');
+        }
+      } catch {
+        // ignore sessionStorage errors
       }
-    } catch (err) {
-      // ignore sessionStorage errors
     }
 
     apiService.getMovies().then((data) => {
       setMovies(data);
       setLoading(false);
     });
-  }, [searchParams, router]);
+  }, [searchParams, router, isLoggedIn]);
 
   // Now Playing: has at least one showtime
   const nowPlaying = movies.filter(
@@ -199,7 +207,7 @@ export default function Home() {
 
       {showLoginSuccess && (
         <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mb-8 max-w-2xl mx-auto">
-          <p className="text-green-400 text-center">✅ Successfully signed in.</p>
+          <p className="text-green-400 text-center">Successfully signed in.</p>
         </div>
       )}
 

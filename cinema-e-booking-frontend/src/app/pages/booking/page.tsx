@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import { Movie, apiService } from '../../utils/api';
 
 // Define ticket types and age categories
@@ -21,11 +20,16 @@ interface TicketSelection {
     assignedSeats: string[];
 }
 
-interface Seat {
-  row: number;
-  number: number;
+interface SelectedSeatInfo {
   id: string;
-  isOccupied: boolean;
+  displayName: string;
+}
+
+interface Seat {
+  id: string;
+  row_label: string;
+  seat_number: number;
+  is_available: boolean;
   isSelected: boolean;
 }
 
@@ -35,7 +39,8 @@ function BookingContent() {
   const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState<TicketSelection[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
-  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [selectedSeats, setSelectedSeats] = useState<SelectedSeatInfo[]>([]);
+  const [showroomName, setShowroomName] = useState<string>('');
 
   // Get parameters from URL
   const movieId = searchParams.get('movieId');
@@ -44,49 +49,63 @@ function BookingContent() {
   const showId = searchParams.get('showId');
   const showTime = searchParams.get('showTime');
 
-  // Initialize seats (10x10 grid)
+  // Helper function to create seat display name
+  const getSeatDisplayName = (seat: Seat) => `${seat.row_label}${seat.seat_number}`;
+
+  // Fetch seats from database when showId is available
   useEffect(() => {
-    const initializeSeats = () => {
-      const seatGrid: Seat[] = [];
-      const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-      
-      rows.forEach((rowLetter, rowIndex) => {
-        for (let seatNum = 1; seatNum <= 10; seatNum++) {
-          const seatId = `${rowLetter}${seatNum}`;
-          // Randomly make some seats occupied for demo purposes
-          const isOccupied = Math.random() < 0.15; // 15% chance of being occupied
-          
-          seatGrid.push({
-            row: rowIndex,
-            number: seatNum,
-            id: seatId,
-            isOccupied,
-            isSelected: false
-          });
+    const fetchSeats = async () => {
+      if (!showId) {
+        console.log('No showId provided, seats will not be loaded');
+        return;
+      }
+
+      try {
+        console.log('Fetching seats for show:', showId);
+        const response = await apiService.getAvailableSeats(showId);
+        const apiSeats = response.seats;
+        
+        // Transform API seats to include selection state
+        const transformedSeats: Seat[] = apiSeats.map(seat => ({
+          ...seat,
+          isSelected: false
+        }));
+        
+        console.log('Loaded seats from database:', transformedSeats.length, 'seats');
+        console.log('Seat distribution by row:', 
+          Object.entries(
+            transformedSeats.reduce((acc: Record<string, number>, seat) => {
+              acc[seat.row_label] = (acc[seat.row_label] || 0) + 1;
+              return acc;
+            }, {})
+          )
+        );
+        setSeats(transformedSeats);
+        
+        // Try to get showroom name - we can extract it from the movie's shows
+        if (movie?.Shows && Array.isArray(movie.Shows)) {
+          const currentShow = movie.Shows.find(show => show.id === showId);
+          if (currentShow?.Showroom?.name) {
+            setShowroomName(currentShow.Showroom.name);
+          } else {
+            // Fallback to a generic name if showroom data isn't available
+            setShowroomName('Theater');
+          }
+        } else {
+          // Fallback if no show data is available
+          setShowroomName('Theater');
         }
-      });
-      
-      setSeats(seatGrid);
+      } catch (error) {
+        console.error('Error fetching seats:', error);
+        // Fallback to empty seats array if API fails
+        setSeats([]);
+      }
     };
 
-    initializeSeats();
-  }, []);
+    fetchSeats();
+  }, [showId, movie]);
 
-  // Helper function to extract time from start_time timestamp (copied from MovieResults)
-  const extractTime = (startTime: string) => {
-    if (!startTime) return null;
-    try {
-      const date = new Date(startTime);
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch (error) {
-      console.error('Error parsing time:', error);
-      return null;
-    }
-  };
+
 
   // Helper function to get rating display styles based on MPAA rating (copied from MovieResults)
   const getRatingStyles = (rating: string) => {
@@ -157,20 +176,27 @@ function BookingContent() {
   // Handle seat selection
   const handleSeatClick = (seatId: string) => {
     const seat = seats.find(s => s.id === seatId);
-    if (!seat || seat.isOccupied) return;
+    if (!seat || !seat.is_available) return;
 
     const totalTicketsNeeded = getTotalTickets();
+    const seatDisplayName = getSeatDisplayName(seat);
     
-    if (selectedSeats.includes(seatId)) {
+    const isCurrentlySelected = selectedSeats.some(s => s.id === seatId);
+    
+    if (isCurrentlySelected) {
       // Deselect seat
-      setSelectedSeats(selectedSeats.filter(id => id !== seatId));
+      setSelectedSeats(selectedSeats.filter(s => s.id !== seatId));
       setSeats(seats.map(s => 
         s.id === seatId ? { ...s, isSelected: false } : s
       ));
     } else {
       // Select seat (only if we haven't exceeded ticket count)
       if (selectedSeats.length < totalTicketsNeeded) {
-        setSelectedSeats([...selectedSeats, seatId]);
+        const newSeatInfo: SelectedSeatInfo = {
+          id: seatId,
+          displayName: seatDisplayName
+        };
+        setSelectedSeats([...selectedSeats, newSeatInfo]);
         setSeats(seats.map(s => 
           s.id === seatId ? { ...s, isSelected: true } : s
         ));
@@ -227,7 +253,7 @@ function BookingContent() {
   };
 
   const getSeatClassName = (seat: Seat) => {
-    if (seat.isOccupied) {
+    if (!seat.is_available) {
       return 'bg-red-500 cursor-not-allowed';
     } else if (seat.isSelected) {
       return 'bg-green-500 hover:bg-green-600 cursor-pointer';
@@ -254,12 +280,14 @@ function BookingContent() {
       time: showTime,
       tickets: tickets,
       selectedSeats: selectedSeats,
+      selectedSeatIds: selectedSeats.map(seat => seat.id), // For future database operations
+      selectedSeatNames: selectedSeats.map(seat => seat.displayName), // For display
       total: calculateTotal(),
       totalTickets: getTotalTickets()
     };
 
     console.log('Booking details:', bookingDetails);
-    alert(`Proceeding to payment for ${getTotalTickets()} ticket(s) - Seats: ${selectedSeats.join(', ')} - Total: $${calculateTotal().toFixed(2)}`);
+    alert(`Proceeding to payment for ${getTotalTickets()} ticket(s) - Seats: ${selectedSeats.map(seat => seat.displayName).join(', ')} - Total: $${calculateTotal().toFixed(2)}`);
   };
 
   if (loading) {
@@ -337,11 +365,11 @@ function BookingContent() {
                     {showTime || 'Time TBA'}
                   </span>
                 </p>
-                {movie?.duration && (
+                {movie?.duration_minutes && (
                   <p className="flex items-center">
                     <span className="font-semibold mr-2">⏱️ Duration:</span>
                     <span className="text-black/70">
-                      {Math.floor(movie.duration / 60)}h {movie.duration % 60}m
+                      {Math.floor(movie.duration_minutes / 60)}h {movie.duration_minutes  % 60}m
                     </span>
                   </p>
                 )}
@@ -445,47 +473,72 @@ function BookingContent() {
             <div className="glass-card p-6 mb-6 xl:mb-0">
               <h3 className="text-xl font-bold text-black mb-4 drop-shadow-lg text-center">Select Seats</h3>
               
-              {tickets.length === 0 ? (
+              {!showId ? (
+                <div className="text-center py-8 text-black/70">
+                  <p>No show selected. Please select a date and time first.</p>
+                </div>
+              ) : tickets.length === 0 ? (
                 <div className="text-center py-8 text-black/70">
                   <p>Please add tickets first to select seats</p>
                 </div>
               ) : (
                 <div>
-                  {/* Screen indicator */}
-                  <div className="mb-6">
+                  {/* Showroom name and Screen indicator */}
+                  <div className="mb-6 text-center">
+                    {showroomName && (
+                      <p className="text-black font-semibold text-lg mb-3 drop-shadow-sm">
+                        {showroomName}
+                      </p>
+                    )}
                     <div className="bg-gradient-to-r from-uga-red/60 to-uga-red/40 h-2 rounded-full mb-2"></div>
-                    <p className="text-center text-black/70 text-sm">SCREEN</p>
+                    <p className="text-black/70 text-sm">SCREEN</p>
                   </div>
 
                   {/* Seat grid */}
-                  <div className="grid grid-cols-11 gap-1 mb-6">
-                    {/* Row labels and seats */}
-                    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'].map((rowLetter, rowIndex) => (
-                      <div key={rowLetter} className="contents">
-                        {/* Row label */}
-                        <div className="flex items-center justify-center text-black font-semibold text-sm">
-                          {rowLetter}
-                        </div>
-                        {/* Seats in this row */}
-                        {Array.from({ length: 10 }, (_, seatIndex) => {
-                          const seatId = `${rowLetter}${seatIndex + 1}`;
-                          const seat = seats.find(s => s.id === seatId);
-                          return (
-                            <button
-                              key={seatId}
-                              onClick={() => handleSeatClick(seatId)}
-                              className={`w-6 h-6 rounded-sm text-xs font-bold transition-all duration-200 ${
-                                seat ? getSeatClassName(seat) : 'bg-gray-300'
-                              }`}
-                              disabled={seat?.isOccupied}
-                              title={seat?.isOccupied ? 'Occupied' : seat?.isSelected ? 'Selected' : 'Available'}
-                            >
-                              {seatIndex + 1}
-                            </button>
-                          );
-                        })}
+                  <div className="mb-6">
+                    {seats.length === 0 ? (
+                      <div className="text-center py-8 text-black/70">
+                        <p>Loading seat map...</p>
                       </div>
-                    ))}
+                    ) : (
+                      <div>
+                        {/* Group seats by row */}
+                        {Object.entries(
+                          seats.reduce((acc: Record<string, Seat[]>, seat) => {
+                            if (!acc[seat.row_label]) {
+                              acc[seat.row_label] = [];
+                            }
+                            acc[seat.row_label].push(seat);
+                            return acc;
+                          }, {})
+                        )
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([rowLabel, rowSeats]) => (
+                          <div key={rowLabel} className="flex items-center justify-center mb-2">
+                            {/* Row label */}
+                            <div className="w-6 flex items-center justify-center text-black font-semibold text-sm mr-2">
+                              {rowLabel}
+                            </div>
+                            {/* Seats in this row */}
+                            <div className="flex gap-1">
+                              {rowSeats
+                                .sort((a, b) => a.seat_number - b.seat_number)
+                                .map((seat) => (
+                                <button
+                                  key={seat.id}
+                                  onClick={() => handleSeatClick(seat.id)}
+                                  className={`w-6 h-6 rounded-sm text-xs font-bold transition-all duration-200 ${getSeatClassName(seat)}`}
+                                  disabled={!seat.is_available}
+                                  title={!seat.is_available ? 'Occupied' : seat.isSelected ? 'Selected' : 'Available'}
+                                >
+                                  {seat.seat_number}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Legend */}
@@ -508,7 +561,9 @@ function BookingContent() {
                   {selectedSeats.length > 0 && (
                     <div className="mt-4 p-3 bg-green-100 rounded-lg">
                       <p className="text-sm font-semibold text-green-800">Selected Seats:</p>
-                      <p className="text-sm text-green-700">{selectedSeats.join(', ')}</p>
+                      <p className="text-sm text-green-700">
+                        {selectedSeats.map(seat => seat.displayName).join(', ')}
+                      </p>
                     </div>
                   )}
 
@@ -549,8 +604,8 @@ function BookingContent() {
                     <p className="text-sm text-black/80 mb-2">Selected Seats:</p>
                     <div className="flex flex-wrap gap-1">
                       {selectedSeats.map(seat => (
-                        <span key={seat} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                          {seat}
+                        <span key={seat.id} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                          {seat.displayName}
                         </span>
                       ))}
                     </div>

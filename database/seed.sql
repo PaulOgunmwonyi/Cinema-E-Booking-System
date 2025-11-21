@@ -89,7 +89,15 @@ SELECT id, (SELECT id FROM genres WHERE name = 'Comedy') FROM movies WHERE title
 
 
 -- =========================
--- Halls
+-- Showrooms
+-- =========================
+INSERT INTO showrooms (name, capacity) VALUES
+  ('Main Hall', 200),
+  ('Theater 2', 150),
+  ('IMAX Theater', 300);
+
+-- =========================
+-- Halls (keeping for compatibility)
 -- =========================
 INSERT INTO halls (name, description, seats) VALUES
   ('Main Hall', 'Primary auditorium with 200 seats', 200);
@@ -99,61 +107,138 @@ INSERT INTO halls (name, description, seats) VALUES
 -- =========================
 
 -- Already showing
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-25 19:00:00', '2025-10-25 21:49:00'
-FROM movies m, halls h
-WHERE m.title = 'Interstellar' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-25 19:00:00', '2025-10-25 21:49:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Interstellar' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-26 18:00:00', '2025-10-26 20:28:00'
-FROM movies m, halls h
-WHERE m.title = 'Inception' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-26 18:00:00', '2025-10-26 20:28:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Inception' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-27 20:00:00', '2025-10-27 21:56:00'
-FROM movies m, halls h
-WHERE m.title = 'Ghosted' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-27 20:00:00', '2025-10-27 21:56:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Ghosted' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-28 19:30:00', '2025-10-28 21:32:00'
-FROM movies m, halls h
-WHERE m.title = 'Heart of Stone' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-28 19:30:00', '2025-10-28 21:32:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Heart of Stone' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-29 18:30:00', '2025-10-29 20:35:00'
-FROM movies m, halls h
-WHERE m.title = 'Godzilla Minus One' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-29 18:30:00', '2025-10-29 20:35:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Godzilla Minus One' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-30 20:00:00', '2025-10-30 22:49:00'
-FROM movies m, halls h
-WHERE m.title = 'John Wick: Chapter 4' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-30 20:00:00', '2025-10-30 22:49:00'
+FROM movies m, showrooms s
+WHERE m.title = 'John Wick: Chapter 4' AND s.name = 'Main Hall';
 
 -- Additional shows for variety
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-25 14:00:00', '2025-10-25 16:49:00'
-FROM movies m, halls h
-WHERE m.title = 'Interstellar' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-25 14:00:00', '2025-10-25 16:49:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Interstellar' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-26 21:00:00', '2025-10-26 23:28:00'
-FROM movies m, halls h
-WHERE m.title = 'Inception' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-26 21:00:00', '2025-10-26 23:28:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Inception' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-25 16:30:00', '2025-10-25 18:52:00'
-FROM movies m, halls h
-WHERE m.title = 'The Dark Knight' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-25 16:30:00', '2025-10-25 18:52:00'
+FROM movies m, showrooms s
+WHERE m.title = 'The Dark Knight' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-27 15:00:00', '2025-10-27 16:33:00'
-FROM movies m, halls h
-WHERE m.title = '65' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-27 15:00:00', '2025-10-27 16:33:00'
+FROM movies m, showrooms s
+WHERE m.title = '65' AND s.name = 'Main Hall';
 
-INSERT INTO shows (movie_id, hall_id, start_time, end_time)
-SELECT m.id, h.id, '2025-10-28 22:00:00', '2025-10-29 00:49:00'
-FROM movies m, halls h
-WHERE m.title = 'John Wick: Chapter 4' AND h.name = 'Main Hall';
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-28 22:00:00', '2025-10-29 00:49:00'
+FROM movies m, showrooms s
+WHERE m.title = 'John Wick: Chapter 4' AND s.name = 'Main Hall';
+
+-- Add some shows in different theaters
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-26 15:00:00', '2025-10-26 17:28:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Inception' AND s.name = 'Theater 2';
+
+INSERT INTO shows (movie_id, showroom_id, start_time, end_time)
+SELECT m.id, s.id, '2025-10-27 14:00:00', '2025-10-27 16:49:00'
+FROM movies m, showrooms s
+WHERE m.title = 'Interstellar' AND s.name = 'IMAX Theater';
+
+-- =========================
+-- Hall Seats (for booking functionality)
+-- =========================
+
+-- Generate seats for Main Hall (200 seats: Rows A-T, 10 seats per row)
+DO $$
+DECLARE
+    showroom_uuid UUID;
+    row_char CHAR;
+    seat_num INT;
+BEGIN
+    -- Get the Main Hall showroom ID
+    SELECT id INTO showroom_uuid FROM showrooms WHERE name = 'Main Hall';
+    
+    -- Generate seats A1-A10, B1-B10, ..., T1-T10
+    FOR i IN 1..20 LOOP
+        row_char := CHR(64 + i); -- A=65, B=66, etc.
+        FOR seat_num IN 1..10 LOOP
+            INSERT INTO hall_seats (hall_id, row_label, seat_number, is_available)
+            VALUES (showroom_uuid, row_char, seat_num, TRUE);
+        END LOOP;
+    END LOOP;
+END $$;
+
+-- Generate seats for Theater 2 (150 seats: Rows A-O, 10 seats per row)
+DO $$
+DECLARE
+    showroom_uuid UUID;
+    row_char CHAR;
+    seat_num INT;
+BEGIN
+    SELECT id INTO showroom_uuid FROM showrooms WHERE name = 'Theater 2';
+    
+    FOR i IN 1..15 LOOP
+        row_char := CHR(64 + i);
+        FOR seat_num IN 1..10 LOOP
+            INSERT INTO hall_seats (hall_id, row_label, seat_number, is_available)
+            VALUES (showroom_uuid, row_char, seat_num, TRUE);
+        END LOOP;
+    END LOOP;
+END $$;
+
+-- Generate seats for IMAX Theater (300 seats: Rows A-Z, 12 seats per row, then AA-AE, 12 seats per row)
+DO $$
+DECLARE
+    showroom_uuid UUID;
+    row_char TEXT;
+    seat_num INT;
+BEGIN
+    SELECT id INTO showroom_uuid FROM showrooms WHERE name = 'IMAX Theater';
+    
+    -- Rows A-Z (26 rows × 12 seats = 312, but we'll stop at 25 rows for exactly 300)
+    FOR i IN 1..25 LOOP
+        IF i <= 26 THEN
+            row_char := CHR(64 + i);
+        ELSE
+            row_char := 'A' || CHR(64 + (i - 26));
+        END IF;
+        
+        FOR seat_num IN 1..12 LOOP
+            INSERT INTO hall_seats (hall_id, row_label, seat_number, is_available)
+            VALUES (showroom_uuid, row_char, seat_num, TRUE);
+        END LOOP;
+    END LOOP;
+END $$;
 
 
 
