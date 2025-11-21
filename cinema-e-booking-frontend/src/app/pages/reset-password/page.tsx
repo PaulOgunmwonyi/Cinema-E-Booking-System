@@ -38,9 +38,8 @@ export default function ResetPasswordPage() {
       setMessage(res.message || 'Password reset successful.');
       // redirect to login after a short delay
       setTimeout(() => router.push('/pages/login'), 1500);
-    } catch (err: any) {
-      console.error(err);
-      setError(err?.message || 'Failed to reset password.');
+    } catch (err) {
+      setError('Failed to reset password.');
     } finally {
       setLoading(false);
     }

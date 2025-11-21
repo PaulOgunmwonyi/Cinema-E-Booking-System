@@ -48,14 +48,15 @@ const Header = () => {
 
   const handleLoginLogout = () => {
     if (isLoggedIn) {
-      logout();
-      // After logging out, set a session flag and redirect to home so UI shows confirmation
+      // Set the logout banner flag before logging out
       try {
         sessionStorage.setItem('showLogoutBanner', '1');
-      } catch (err) {
-        // sessionStorage might not be available in some environments - ignore
+      } catch {
       }
-      router.push('/');
+      logout();
+      setTimeout(() => {
+        router.push('/');
+      }, 10);
     } else {
       router.push('/pages/login');
     }

@@ -8,20 +8,31 @@ export interface Genre {
 export interface Show {
   id: string;
   movie_id: string;
-  start_time: string; 
+  showroom_id: string;
+  start_time: string;
+  end_time: string;
+  duration_minutes?: number;
+  is_active: boolean;
+  created_at?: string;
+  Movie?: Movie;
+  Showroom?: Showroom;
 }
 
 export interface Movie {
   id: string;
   title: string;
-  synopsis: string; 
-  duration: number;
+  synopsis?: string;
+  duration_minutes?: number;
   mpaa_rating: string;
-  release_date: string;
-  poster_url: string;
+  release_date?: string;
+  director?: string;
+  producer?: string;
+  poster_url?: string;
   trailer_url?: string;
-  Genres: Genre[];
-  Shows: Show[];
+  created_at?: string;
+  updated_at?: string;
+  Genres?: Genre[];
+  Shows?: Show[];
 }
 
 export interface Address {
@@ -37,6 +48,54 @@ export interface PaymentCard {
   cardType: string;
   cardNumber?: string;
   expirationDate?: string; 
+}
+
+export interface Showroom {
+  id: string;
+  name: string;
+  capacity: number;
+}
+
+export interface Promotion {
+  id: string;
+  code: string;
+  title?: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  discount_percent: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Seat {
+  id: string;
+  row_label: string;
+  seat_number: number;
+  is_available: boolean;
+}
+
+export interface Booking {
+  id: string;
+  user_id: string;
+  show_id: string;
+  total_amount: number;
+  status: 'CONFIRMED' | 'PENDING' | 'CANCELLED';
+  created_at?: string;
+}
+
+export interface Ticket {
+  id: string;
+  booking_id: string;
+  show_id: string;
+  seat_number: string;
+  ticket_category: string;
+  price: number;
+}
+
+export interface AdminMenuItem {
+  label: string;
+  path: string;
 }
 
 export interface UserProfile {
@@ -227,6 +286,101 @@ class ApiService {
     return this.fetchApi('/api/profile/edit', {
       method: 'PUT',
       body: JSON.stringify({ removeCardId: cardId }),
+    }, true);
+  }
+
+  // Admin methods
+  async getAdminHome(): Promise<{ menu: AdminMenuItem[] }> {
+    return this.fetchApi<{ menu: AdminMenuItem[] }>('/api/admin', { method: 'GET' }, true);
+  }
+
+  // Admin - Movie management
+  async addMovie(movieData: {
+    title: string;
+    synopsis: string;
+    director: string;
+    cast?: string[];
+    language: string;
+    rating: string;
+    duration_minutes: number;
+    release_date: string;
+    poster_url: string;
+    trailer_url?: string;
+    genres?: string[];
+  }): Promise<{ message: string; movie: Movie }> {
+    return this.fetchApi<{ message: string; movie: Movie }>('/api/admin/movies', {
+      method: 'POST',
+      body: JSON.stringify(movieData),
+    }, true);
+  }
+
+  async getAdminMovies(): Promise<{ movies: Movie[] }> {
+    return this.fetchApi<{ movies: Movie[] }>('/api/admin/movies', { method: 'GET' }, true);
+  }
+
+  // Admin - Showtime management
+  async addShowtime(showtimeData: {
+    movie_id: string;
+    showroom_id: string;
+    start_time: string;
+    end_time: string;
+  }): Promise<{ message: string; show: Show }> {
+    return this.fetchApi<{ message: string; show: Show }>('/api/admin/showtimes', {
+      method: 'POST',
+      body: JSON.stringify(showtimeData),
+    }, true);
+  }
+
+  async getAdminShowtimes(): Promise<{ shows: Show[] }> {
+    return this.fetchApi<{ shows: Show[] }>('/api/admin/showtimes', { method: 'GET' }, true);
+  }
+
+  // Admin - Promotion management
+  async createPromotion(promotionData: {
+    code: string;
+    title: string;
+    description: string;
+    start_date: string;
+    end_date: string;
+    discount_percent: number;
+  }): Promise<{ message: string; promotion: Promotion }> {
+    return this.fetchApi<{ message: string; promotion: Promotion }>('/api/admin/promotions', {
+      method: 'POST',
+      body: JSON.stringify(promotionData),
+    }, true);
+  }
+
+  async sendPromotion(code: string): Promise<{ message: string }> {
+    return this.fetchApi<{ message: string }>('/api/admin/promotions/send', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }, true);
+  }
+
+  // Get all showrooms (needed for admin scheduling)
+  // Note: You may need to create a /showrooms endpoint in your backend
+  // or modify this to use an existing endpoint that returns showroom data
+  async getShowrooms(): Promise<Showroom[]> {
+    return this.fetchApi<Showroom[]>('/showrooms');
+  }
+
+  // Booking methods
+  async getAvailableSeats(showId: string): Promise<{ show_id: string; seats: Seat[] }> {
+    return this.fetchApi<{ show_id: string; seats: Seat[] }>(`/api/bookings/seats/${showId}`, {
+      method: 'GET'
+    }, true);
+  }
+
+  async reserveSeats(bookingData: {
+    user_id: string;
+    show_id: string;
+    seat_ids: string[];
+    ticket_category: string;
+    price: number;
+  }): Promise<{ message: string; booking_id: string }> {
+    return this.fetchApi<{ message: string; booking_id: string }>('/api/bookings/reserve', {
+      method: 'POST',
+      body: JSON.stringify(bookingData),
     }, true);
   }
 }

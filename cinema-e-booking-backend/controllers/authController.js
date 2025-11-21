@@ -202,7 +202,7 @@ const loginUser = async (req, res) => {
     return res.status(422).json({ message: 'Validation failed.', errors: errors.mapped() });
   }
 
-  const { email, password, rememberMe } = req.body;
+  let { email, password, rememberMe } = req.body;
   email = (email || '').trim().toLowerCase();
 
   try {
