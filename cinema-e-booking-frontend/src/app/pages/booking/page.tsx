@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Movie, apiService } from '../../utils/api';
+import { useUser } from '../../contexts/UserContext';
 
 // Define ticket types and age categories
 const AGE_CATEGORIES = [
@@ -35,12 +36,16 @@ interface Seat {
 
 function BookingContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { isLoggedIn, user } = useUser();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState<TicketSelection[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeatInfo[]>([]);
   const [showroomName, setShowroomName] = useState<string>('');
+  const hasRestoredState = useRef(false);
+  const hasLoadedSeats = useRef(false);
 
   // Get parameters from URL
   const movieId = searchParams.get('movieId');
@@ -52,60 +57,98 @@ function BookingContent() {
   // Helper function to create seat display name
   const getSeatDisplayName = (seat: Seat) => `${seat.row_label}${seat.seat_number}`;
 
-  // Fetch seats from database when showId is available
+  // Fetch seats and restore booking state when showId is available
   useEffect(() => {
-    const fetchSeats = async () => {
+    const fetchSeatsAndRestoreState = async () => {
       if (!showId) {
-        console.log('No showId provided, seats will not be loaded');
         return;
       }
 
+      if (hasLoadedSeats.current) {
+        return;
+      }
+
+      // First, restore booking state if user is logged in and we haven't restored yet
+      let restoredSelectedSeats: SelectedSeatInfo[] = [];
+      if (isLoggedIn && !hasRestoredState.current) {
+        try {
+          const savedState = localStorage.getItem('cinema_booking_state');
+          if (savedState) {
+            const bookingState = JSON.parse(savedState);
+            
+            // Only restore if it's for the same show and not too old (30 minutes)
+            const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
+            if (bookingState.showId === showId && bookingState.timestamp > thirtyMinutesAgo) {
+              
+              setTickets(bookingState.tickets);
+              
+              restoredSelectedSeats = bookingState.selectedSeats;
+              setSelectedSeats(restoredSelectedSeats);
+              
+              localStorage.removeItem('cinema_booking_state');
+              hasRestoredState.current = true;
+            } else {
+              localStorage.removeItem('cinema_booking_state');
+            }
+          }
+        } catch{
+          localStorage.removeItem('cinema_booking_state');
+        }
+      }
+
+      // Fetch seats from API
       try {
-        console.log('Fetching seats for show:', showId);
         const response = await apiService.getAvailableSeats(showId);
         const apiSeats = response.seats;
+        // Transform API seats to include selection state (from restored state)
+        const transformedSeats: Seat[] = apiSeats.map(seat => {
+          const shouldBeSelected = restoredSelectedSeats.some(selectedSeat => selectedSeat.id === seat.id);
+          return {
+            ...seat,
+            isSelected: shouldBeSelected
+          };
+        });
         
-        // Transform API seats to include selection state
-        const transformedSeats: Seat[] = apiSeats.map(seat => ({
-          ...seat,
-          isSelected: false
-        }));
-        
-        console.log('Loaded seats from database:', transformedSeats.length, 'seats');
-        console.log('Seat distribution by row:', 
-          Object.entries(
-            transformedSeats.reduce((acc: Record<string, number>, seat) => {
-              acc[seat.row_label] = (acc[seat.row_label] || 0) + 1;
-              return acc;
-            }, {})
-          )
-        );
         setSeats(transformedSeats);
+        hasLoadedSeats.current = true;
         
-        // Try to get showroom name - we can extract it from the movie's shows
-        if (movie?.Shows && Array.isArray(movie.Shows)) {
-          const currentShow = movie.Shows.find(show => show.id === showId);
-          if (currentShow?.Showroom?.name) {
-            setShowroomName(currentShow.Showroom.name);
-          } else {
-            // Fallback to a generic name if showroom data isn't available
-            setShowroomName('Theater');
-          }
+        // Set showroom name from API response
+        if (response.showroom?.name) {
+          setShowroomName(response.showroom.name);
         } else {
-          // Fallback if no show data is available
           setShowroomName('Theater');
         }
       } catch (error) {
         console.error('Error fetching seats:', error);
-        // Fallback to empty seats array if API fails
         setSeats([]);
+        setShowroomName('Theater');
       }
     };
 
-    fetchSeats();
-  }, [showId, movie]);
+    fetchSeatsAndRestoreState();
+  }, [showId, isLoggedIn]);
 
+  // Reset flags when showId changes
+  useEffect(() => {
+    hasLoadedSeats.current = false;
+    hasRestoredState.current = false;
+  }, [showId]);
 
+  // Update seat visual state when selectedSeats changes (for user interactions)
+  useEffect(() => {
+    if (selectedSeats.length > 0 && seats.length > 0 && hasLoadedSeats.current) {
+      setSeats(prevSeats => {
+        const updatedSeats = prevSeats.map(seat => {
+          const isSelected = selectedSeats.some(selectedSeat => selectedSeat.id === seat.id);
+          return {
+            ...seat,
+            isSelected
+          };
+        });
+        return updatedSeats;
+      });
+    }
+  }, [selectedSeats, seats.length]);
 
   // Helper function to get rating display styles based on MPAA rating (copied from MovieResults)
   const getRatingStyles = (rating: string) => {
@@ -148,6 +191,28 @@ function BookingContent() {
 
     fetchMovieDetails();
   }, [movieId]);
+
+  // Cleanup effect - clear old booking state on unmount
+  useEffect(() => {
+    return () => {
+      // Optional: Clean up very old booking states on unmount
+      try {
+        const savedState = localStorage.getItem('cinema_booking_state');
+        if (savedState) {
+          const bookingState = JSON.parse(savedState);
+          // Clear if older than 1 hour
+          const oneHourAgo = Date.now() - (60 * 60 * 1000);
+          if (bookingState.timestamp < oneHourAgo) {
+            localStorage.removeItem('cinema_booking_state');
+          }
+        }
+      } catch {
+        localStorage.removeItem('cinema_booking_state');
+      }
+    };
+  }, []);
+
+
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
@@ -262,7 +327,8 @@ function BookingContent() {
     }
   };
 
-  const handleProceedToPayment = () => {
+  const handleProceedToPayment = async () => {
+
     if (tickets.length === 0) {
       alert('Please add at least one ticket to proceed.');
       return;
@@ -274,20 +340,82 @@ function BookingContent() {
       return;
     }
 
-    const bookingDetails = {
-      movie: movie?.title ?? movieTitle ?? '',
-      date: showDate,
-      time: showTime,
-      tickets: tickets,
-      selectedSeats: selectedSeats,
-      selectedSeatIds: selectedSeats.map(seat => seat.id), // For future database operations
-      selectedSeatNames: selectedSeats.map(seat => seat.displayName), // For display
-      total: calculateTotal(),
-      totalTickets: getTotalTickets()
-    };
+    // Check if user is logged in
+    if (!isLoggedIn) {
+      // Store booking state before redirecting to login
+      const bookingState = {
+        tickets,
+        selectedSeats,
+        showId,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('cinema_booking_state', JSON.stringify(bookingState));
+      
+      const currentPath = window.location.pathname + window.location.search;
+      router.push(`/pages/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
 
-    console.log('Booking details:', bookingDetails);
-    alert(`Proceeding to payment for ${getTotalTickets()} ticket(s) - Seats: ${selectedSeats.map(seat => seat.displayName).join(', ')} - Total: $${calculateTotal().toFixed(2)}`);
+    // Check if we have user ID, if not, fetch user profile
+    let userId = user?.id;
+    
+    if (!userId) {
+      try {
+        const profile = await apiService.getProfile();
+        userId = profile.user.id;
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        alert('Unable to retrieve user information. Please log in again.');
+        return;
+      }
+    }
+
+    if (!showId) {
+      alert('Show information not available. Please try again.');
+      return;
+    }
+
+    try {
+      // Get the dominant ticket category for the booking
+      const dominantCategory = tickets.reduce((prev, current) => 
+        (prev.quantity > current.quantity) ? prev : current
+      );
+      
+      // Reserve the seats in the database
+      const reservationData = {
+        user_id: userId,
+        show_id: showId,
+        seat_ids: selectedSeats.map(seat => seat.id),
+        ticket_category: dominantCategory.category,
+        price: calculateTotal() / selectedSeats.length // Price per seat
+      };
+      const result = await apiService.reserveSeats(reservationData);
+      // Clear booking state
+      localStorage.removeItem('cinema_booking_state');
+      
+      // Show success message and wait for user acknowledgment
+      alert(`🎉 Booking Confirmed Successfully!
+      Booking ID: ${result.booking_id}
+      Seats: ${selectedSeats.map(seat => seat.displayName).join(', ')}
+      Total: $${calculateTotal().toFixed(2)}
+
+      Your tickets have been reserved!`);
+      
+      // Navigate after user dismisses alert
+      router.push('/');
+      
+    } catch (error) {
+      console.error('Seat reservation failed:', error);
+      
+      let errorMessage = 'Failed to reserve seats. ';
+      if (error instanceof Error) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      
+      alert(errorMessage);
+    }
   };
 
   if (loading) {
@@ -629,7 +757,9 @@ function BookingContent() {
                   ? 'Add Tickets First'
                   : selectedSeats.length !== getTotalTickets()
                   ? `Select ${getTotalTickets() - selectedSeats.length} More Seats`
-                  : 'Proceed to Payment'
+                  : isLoggedIn 
+                  ? 'Proceed to Payment'
+                  : 'Book Tickets'
                 }
               </button>
               

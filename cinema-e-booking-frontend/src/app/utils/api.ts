@@ -357,16 +357,17 @@ class ApiService {
     }, true);
   }
 
-  // Get all showrooms (needed for admin scheduling)
-  // Note: You may need to create a /showrooms endpoint in your backend
-  // or modify this to use an existing endpoint that returns showroom data
-  async getShowrooms(): Promise<Showroom[]> {
-    return this.fetchApi<Showroom[]>('/showrooms');
-  }
-
   // Booking methods
-  async getAvailableSeats(showId: string): Promise<{ show_id: string; seats: Seat[] }> {
-    return this.fetchApi<{ show_id: string; seats: Seat[] }>(`/api/bookings/seats/${showId}`, {
+  async getAvailableSeats(showId: string): Promise<{ 
+    show_id: string; 
+    seats: Seat[]; 
+    showroom: { id: string; name: string; capacity: number } 
+  }> {
+    return this.fetchApi<{ 
+      show_id: string; 
+      seats: Seat[]; 
+      showroom: { id: string; name: string; capacity: number } 
+    }>(`/api/bookings/seats/${showId}`, {
       method: 'GET'
     }, true);
   }

@@ -45,14 +45,22 @@ const LoginPage = () => {
       return;
     }
 
-      setIsSubmitting(true);
+    setIsSubmitting(true);
     try {
       const res = await apiService.loginUser({ email, password });
       const tokens = { accessToken: res.accessToken, refreshToken: res.refreshToken };
       const user = { id: '', email, firstName: '', lastName: '', role: res.role };
-  login(user, tokens);
-  // Redirect to home with a success flag so the home page can show a confirmation
-  router.push('/?login=success');
+      login(user, tokens);
+      
+      // Check for redirect parameter
+      const redirectTo = searchParams.get('redirect');
+      if (redirectTo) {
+        // Redirect back to the original path
+        router.push(redirectTo);
+      } else {
+        // Default redirect to home with success flag
+        router.push('/?login=success');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -126,7 +134,11 @@ const LoginPage = () => {
 
               <button
                 type="button"
-                onClick={() => router.push('/pages/signup')}
+                onClick={() => {
+                  const redirectTo = searchParams.get('redirect');
+                  const signupPath = redirectTo ? `/pages/signup?redirect=${encodeURIComponent(redirectTo)}` : '/pages/signup';
+                  router.push(signupPath);
+                }}
                 className="flex-1 px-4 py-3 rounded-lg border border-white/30 text-white hover:bg-white/10"
               >
                 Create account

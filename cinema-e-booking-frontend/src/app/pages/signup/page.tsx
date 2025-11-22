@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiService } from '../../utils/api';
 
 interface RegistrationData {
@@ -112,6 +112,7 @@ const VerificationModal = ({ email, onVerificationSuccess, onClose }: Verificati
 };
 
 const SignupPage = () => {
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState<RegistrationData>({
     firstName: '',
     lastName: '',
@@ -325,8 +326,15 @@ const SignupPage = () => {
 
   const handleVerificationSuccess = () => {
     setShowVerification(false);
+    
+    // Check for redirect parameter and include it in the login URL
+    const redirectTo = searchParams.get('redirect');
+    const loginPath = redirectTo 
+      ? `/pages/login?registered=true&redirect=${encodeURIComponent(redirectTo)}`
+      : '/pages/login?registered=true';
+    
     // After successful verification, redirect the user to the login page
-    router.push('/pages/login?registered=true');
+    router.push(loginPath);
   };
 
   const formatCardNumber = (value: string) => {
