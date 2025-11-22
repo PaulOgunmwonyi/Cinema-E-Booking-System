@@ -5,7 +5,14 @@ exports.fetchAvailableSeats = async (req, res) => {
   try {
     const show_id = req.params.show_id.trim();
 
-    const show = await db.Show.findByPk(show_id);
+    // Fetch show with showroom information
+    const show = await db.Show.findByPk(show_id, {
+      include: [{
+        model: db.Showroom,
+        attributes: ['id', 'name', 'capacity']
+      }]
+    });
+    
     if (!show) return res.status(404).json({ message: 'Show not found' });
 
     const hallId = show.showroom_id;
@@ -18,7 +25,15 @@ exports.fetchAvailableSeats = async (req, res) => {
       { bind: [hallId], type: db.Sequelize.QueryTypes.SELECT }
     );
 
-    return res.json({ show_id, seats });
+    return res.json({ 
+      show_id, 
+      seats,
+      showroom: {
+        id: show.Showroom.id,
+        name: show.Showroom.name,
+        capacity: show.Showroom.capacity
+      }
+    });
   } catch (err) {
     console.error('fetchAvailableSeats error:', err);
     return res.status(500).json({ message: 'Server error fetching seats' });
