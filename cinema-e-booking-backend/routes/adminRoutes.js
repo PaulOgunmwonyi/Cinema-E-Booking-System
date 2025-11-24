@@ -12,6 +12,7 @@ const {
   adminHome,
   addMovie, listMovies,
   addShowtime, listShowtimes,
+  deleteShowtime,
   createPromotion, sendPromotion,
   listUsers, addUser, updateUser, deleteUser
 } = require('../controllers/adminController');
@@ -25,6 +26,7 @@ router.get('/movies', listMovies);
 // Showtimes
 router.post('/showtimes', scheduleShowtimeValidator, validate, addShowtime);
 router.get('/showtimes', listShowtimes);
+router.delete('/showtimes/:id', deleteShowtime);
 
 // Promotions
 router.post('/promotions', promotionValidator, validate, createPromotion);
