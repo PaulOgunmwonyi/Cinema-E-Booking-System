@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUser } from "../../contexts/UserContext";
 import { useRouter } from "next/navigation";
 import { apiService, AdminMenuItem } from "../../utils/api";
 
@@ -8,8 +9,17 @@ const AdminHomePage = () => {
   const [menu, setMenu] = useState<AdminMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { user, isLoggedIn } = useUser();
 
   useEffect(() => {
+    // Gate admin page: allow either a sessionStorage admin flag (admin login flow)
+    // or a logged-in user with role 'admin'. Otherwise redirect to admin login.
+    const isAdminSession = typeof window !== "undefined" && sessionStorage.getItem("isAdmin") === "1";
+    if (!isAdminSession && user?.role !== "admin") {
+      router.push("/pages/adminlogin");
+      return;
+    }
+
     apiService
       .getAdminHome()
       .then((data) => {
@@ -17,7 +27,7 @@ const AdminHomePage = () => {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   // Admin logout handler
   const handleLogout = async () => {

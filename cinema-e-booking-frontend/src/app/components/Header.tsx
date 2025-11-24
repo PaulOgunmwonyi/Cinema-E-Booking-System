@@ -91,8 +91,19 @@ const Header = () => {
   };
 
   // Admin login handler (no logout here)
+  // Admin login handler (no logout here)
   const handleAdminButton = () => {
-    if (isAdmin) {
+    const userIsAdmin = !!(user && (user.role === 'admin' || (user as any).is_admin === true));
+    const isAdminSession = isAdmin;
+
+    // If user is not logged in: always send them to admin login
+    if (!user) {
+      router.push('/pages/adminlogin');
+      return;
+    }
+
+    // If user is logged in, only allow admins
+    if (userIsAdmin) {
       router.push('/pages/admin');
     } else {
       router.push('/pages/adminlogin');
@@ -167,13 +178,21 @@ const Header = () => {
                 </Link>
               )}
 
-              {/* Admin Button */}
-              <button
-                onClick={handleAdminButton}
-                className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
-              >
-                Admin
-              </button>
+              {/* Admin Button - hide for logged-in non-admin users */}
+              {(() => {
+                const userIsAdmin = !!(user && (user.role === 'admin' || (user as any).is_admin === true));
+                // If there is a logged-in user and they are NOT an admin, do not show the Admin button.
+                if (user && !userIsAdmin) return null;
+                // For unauthenticated visitors, keep showing the Admin button (leads to admin login).
+                return (
+                  <button
+                    onClick={handleAdminButton}
+                    className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
+                  >
+                    Admin
+                  </button>
+                );
+              })()}
 
               <AuthButton />
             </div>

@@ -191,15 +191,13 @@ const AdminShowtimesPage = () => {
         <h2 className="text-xl font-bold text-white mb-4">Current Showtimes</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full text-white">
-            <thead>
-              <tr>
+            <thead><tr>
                 <th className="px-4 py-2">Movie</th>
                 <th className="px-4 py-2">Showroom</th>
                 <th className="px-4 py-2">Start Time</th>
                 <th className="px-4 py-2">End Time</th>
-                <th className="px-4 py-2">Actions</th> {/* New column for actions */}
-              </tr>
-            </thead>
+                <th className="px-4 py-2">Actions</th>
+              </tr></thead>
             <tbody>
               {shows.length === 0 && (
                 <tr>

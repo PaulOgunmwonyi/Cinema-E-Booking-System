@@ -8,6 +8,8 @@ interface User {
   firstName: string;
   lastName: string;
   role?: string;
+  // optional boolean flag coming from backend token/profile
+  is_admin?: boolean;
 }
 
 interface AuthTokens {
