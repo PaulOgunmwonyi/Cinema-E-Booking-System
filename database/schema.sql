@@ -198,7 +198,7 @@ CREATE TABLE promotions (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Hall seats (seat mapping)
+-- Hall seats (seat mapping template for showrooms)
 CREATE TABLE hall_seats (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   hall_id UUID REFERENCES showrooms(id) ON DELETE CASCADE,
@@ -207,6 +207,17 @@ CREATE TABLE hall_seats (
   is_available BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE (hall_id, row_label, seat_number)
+);
+
+-- Show-specific seats (individual seat mappings per show)
+CREATE TABLE show_seats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  show_id UUID REFERENCES shows(id) ON DELETE CASCADE,
+  row_label TEXT NOT NULL,             
+  seat_number INT NOT NULL,            
+  is_available BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (show_id, row_label, seat_number)
 );
 
 -- Bookings
