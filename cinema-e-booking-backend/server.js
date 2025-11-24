@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const showroomRoutes = require('./routes/showroomRoutes');
 
 const app = express();
 app.use(express.json());
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/showrooms', showroomRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is working ");
