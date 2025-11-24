@@ -140,7 +140,7 @@ function getAccessToken() {
 }
 
 class ApiService {
-  private async fetchApi<T>(endpoint: string, options?: RequestInit, auth: boolean = false): Promise<T> {
+  public async fetchApi<T>(endpoint: string, options?: RequestInit, auth: boolean = false): Promise<T> {
     const accessToken = auth ? getAccessToken() : null;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

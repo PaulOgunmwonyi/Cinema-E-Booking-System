@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { apiService, AdminMenuItem } from '../../utils/api';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { apiService, AdminMenuItem } from "../../utils/api";
 
 const AdminHomePage = () => {
   const [menu, setMenu] = useState<AdminMenuItem[]>([]);
@@ -10,7 +10,8 @@ const AdminHomePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    apiService.getAdminHome()
+    apiService
+      .getAdminHome()
       .then((data) => {
         setMenu(data.menu);
         setLoading(false);
@@ -18,30 +19,74 @@ const AdminHomePage = () => {
       .catch(() => setLoading(false));
   }, []);
 
+  // Admin logout handler
+  const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      const refreshToken = sessionStorage.getItem("refreshToken");
+      if (refreshToken) {
+        try {
+          await apiService.fetchApi('/api/logout', {
+            method: 'POST',
+            body: JSON.stringify({ refreshToken }),
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (e) {
+          // Optionally handle error
+        }
+        sessionStorage.removeItem("refreshToken");
+      }
+      sessionStorage.removeItem("isAdmin");
+      window.dispatchEvent(new Event("storage")); // <-- Add this line!
+    }
+    router.push("/");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-black to-red-900">
-        <div className="glass-card p-8 text-white text-xl">Loading admin menu...</div>
+        <div className="glass-card p-8 text-white text-xl">
+          Loading admin menu...
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-900 via-black to-red-900 flex flex-col items-center justify-center">
-      <div className="glass-card p-8 w-full max-w-xl">
-        <h1 className="text-3xl font-bold text-white mb-6 text-center">Admin Main Menu</h1>
-        <ul className="space-y-4">
+      <div className="glass-card p-8 w-full max-w-xl flex flex-col items-center">
+        <h1 className="text-3xl font-bold text-white mb-6 text-center">
+          Admin Main Menu
+        </h1>
+        <ul className="space-y-4 w-full mb-8">
           {menu.map((item) => (
             <li key={item.path}>
               <button
                 className="w-full glass-button py-4 rounded-lg font-bold text-white text-lg hover:text-gray-200 shadow-lg transition-all duration-200"
-                onClick={() => router.push(item.path)}
+                onClick={() => {
+                  // Remove all leading slashes and all leading "admin/" or "/admin/"
+                  let cleanPath = item.path.replace(/^\/+/, ""); // remove leading slashes
+                  cleanPath = cleanPath.replace(/^admin\//, ""); // remove leading admin/
+                  cleanPath = cleanPath.replace(
+                    /^pages\/admin\//,
+                    ""
+                  ); // remove leading pages/admin/ if present
+                  const targetPath = `/pages/admin/${cleanPath}`;
+                  router.push(targetPath);
+                }}
               >
                 {item.label}
               </button>
             </li>
           ))}
         </ul>
+        <div className="flex justify-center w-full">
+          <button
+            className="mt-4 px-6 py-2 rounded-lg bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
+            onClick={handleLogout}
+          >
+            Log Out
+          </button>
+        </div>
       </div>
     </div>
   );

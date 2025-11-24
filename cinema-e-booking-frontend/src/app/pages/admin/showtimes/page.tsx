@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // <-- Add this import
 import { apiService } from '../../../utils/api';
 
 interface Movie {
@@ -34,6 +35,7 @@ const AdminShowtimesPage = () => {
   const [endTime, setEndTime] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const router = useRouter(); // <-- Add this line
 
   // Fetch movies, showrooms, and shows
   useEffect(() => {
@@ -45,19 +47,6 @@ const AdminShowtimesPage = () => {
   const fetchShows = () => {
     apiService.fetchApi('/api/admin/showtimes').then((data) => setShows(data.shows || []));
   };
-
-  // Prepare three showroom test data if not present
-  useEffect(() => {
-    if (showrooms.length < 3) {
-      // This is just for demo/test; in production, showrooms should be seeded in the DB
-      const testShowrooms = [
-        { id: 1, name: 'Showroom 1' },
-        { id: 2, name: 'Showroom 2' },
-        { id: 3, name: 'Showroom 3' },
-      ];
-      setShowrooms(testShowrooms);
-    }
-  }, [showrooms]);
 
   const handleAddShowtime = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +88,12 @@ const AdminShowtimesPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-900 via-black to-red-900 flex flex-col items-center py-10">
+      <button
+        className="mb-6 px-6 py-2 rounded-lg bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
+        onClick={() => router.push('/pages/admin')}
+      >
+        Go Back
+      </button>
       <div className="glass-card p-8 w-full max-w-2xl mb-8">
         <h1 className="text-2xl font-bold text-white mb-4">Schedule a Movie Showtime</h1>
         <form onSubmit={handleAddShowtime} className="space-y-4">

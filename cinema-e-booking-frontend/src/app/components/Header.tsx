@@ -90,11 +90,10 @@ const Header = () => {
     }
   };
 
-  // Admin login/logout handler
+  // Admin login handler (no logout here)
   const handleAdminButton = () => {
     if (isAdmin) {
-      logoutAdmin();
-      router.push('/');
+      router.push('/pages/admin');
     } else {
       router.push('/pages/adminlogin');
     }
@@ -168,12 +167,12 @@ const Header = () => {
                 </Link>
               )}
 
-              {/* Admin Login/Logout Button */}
+              {/* Admin Button */}
               <button
                 onClick={handleAdminButton}
                 className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
               >
-                {isAdmin ? 'Admin Logout' : 'Admin'}
+                Admin
               </button>
 
               <AuthButton />
