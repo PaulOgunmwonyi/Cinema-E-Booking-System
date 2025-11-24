@@ -237,6 +237,18 @@ class ApiService {
     });
   }
 
+  async adminLogin(credentials: { email: string; password: string; }): Promise<{
+    message: string;
+    accessToken: string;
+    refreshToken: string;
+    role: string;
+  }> {
+    return this.fetchApi('/api/auth/admin-login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  }
+
   async forgotPassword(email: string): Promise<{ message: string }> {
     return this.fetchApi<{ message: string }>('/api/auth/forgot-password', {
       method: 'POST',

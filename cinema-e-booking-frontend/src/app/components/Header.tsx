@@ -1,9 +1,38 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SearchModal from './SearchModal';
 import { useUser } from '../contexts/UserContext';
+
+// Add a simple admin session state using sessionStorage
+function useAdminSession() {
+  const [isAdmin, setIsAdmin] = useState(
+    typeof window !== 'undefined' && sessionStorage.getItem('isAdmin') === '1'
+  );
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setIsAdmin(sessionStorage.getItem('isAdmin') === '1');
+    };
+    window.addEventListener('storage', handleStorage);
+    // Also check on mount in case sessionStorage changed in this tab
+    handleStorage();
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const loginAdmin = () => {
+    sessionStorage.setItem('isAdmin', '1');
+    setIsAdmin(true);
+  };
+
+  const logoutAdmin = () => {
+    sessionStorage.removeItem('isAdmin');
+    setIsAdmin(false);
+  };
+
+  return { isAdmin, loginAdmin, logoutAdmin };
+}
 
 const Header = () => {
   const { user, isLoggedIn, logout } = useUser();
@@ -14,12 +43,14 @@ const Header = () => {
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
+  // Admin session hook
+  const { isAdmin, loginAdmin, logoutAdmin } = useAdminSession();
+
   const handleSearch = (query: string, filters?: { genre: string; date: string }) => {
     const searchParams = new URLSearchParams();
     if (query) searchParams.set('q', query);
     if (filters?.genre) searchParams.set('genre', filters.genre);
     if (filters?.date) searchParams.set('date', filters.date);
-    
     router.push(`/pages/searchResults?${searchParams.toString()}`);
   };
 
@@ -31,7 +62,6 @@ const Header = () => {
   };
 
   const handleApplyFilters = (query: string, filters?: { genre: string; date: string }) => {
-    // Update the states with the filter values
     setSearchQuery(query);
     if (filters) {
       setGenre(filters.genre);
@@ -48,11 +78,9 @@ const Header = () => {
 
   const handleLoginLogout = () => {
     if (isLoggedIn) {
-      // Set the logout banner flag before logging out
       try {
         sessionStorage.setItem('showLogoutBanner', '1');
-      } catch {
-      }
+      } catch {}
       logout();
       setTimeout(() => {
         router.push('/');
@@ -62,9 +90,18 @@ const Header = () => {
     }
   };
 
+  // Admin login/logout handler
+  const handleAdminButton = () => {
+    if (isAdmin) {
+      logoutAdmin();
+      router.push('/');
+    } else {
+      router.push('/pages/adminlogin');
+    }
+  };
+
   const AuthButton = () => {
     const firstName = user?.firstName ?? '';
-
     return (
       <button
         onClick={handleLoginLogout}
@@ -130,6 +167,14 @@ const Header = () => {
                   Edit Profile
                 </Link>
               )}
+
+              {/* Admin Login/Logout Button */}
+              <button
+                onClick={handleAdminButton}
+                className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
+              >
+                {isAdmin ? 'Admin Logout' : 'Admin'}
+              </button>
 
               <AuthButton />
             </div>

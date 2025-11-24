@@ -86,7 +86,10 @@ const addShowtime = async (req, res) => {
 //List showtimes 
 const listShowtimes = async (req, res) => {
   const shows = await db.Show.findAll({
-    include: [ db.Movie, db.Showroom ],
+    include: [
+      { model: db.Movie, attributes: ['id', 'title'] },
+      { model: db.Showroom, attributes: ['id', 'name'] }
+    ],
     order: [['start_time','ASC']]
   }).catch(()=>[]);
   return res.json({ shows });
