@@ -3,15 +3,17 @@ const { body } = require('express-validator');
 const addMovieValidator = [
   body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title required'),
   body('synopsis').trim().isLength({ min: 10 }).withMessage('Synopsis required'),
-  body('director').optional({ nullable: true }).trim().isLength({ max: 100 }),
-  body('cast').optional({ nullable: true }).isArray().withMessage('Cast must be an array'),
+  body('director').trim().isLength({ min: 1 }).withMessage('Director required'),
+  body('producer').trim().isLength({ min: 1 }).withMessage('Producer required'),
+  body('cast').isArray().withMessage('Cast must be an array').custom((v) => Array.isArray(v) && v.length > 0).withMessage('Cast cannot be empty'),
   body('language').optional({ nullable: true }).trim().isLength({ max: 50 }),
-  body('rating').optional({ nullable: true }).trim().isLength({ max: 10 }), 
+  body('rating').trim().isLength({ min: 1 }).withMessage('MPAA rating required'), 
   body('duration_minutes').isInt({ min: 30, max: 400 }).withMessage('Duration (minutes) required'),
   body('release_date').optional({ nullable: true }).isISO8601().toDate(),
-  body('poster_url').optional({ nullable: true }).isURL(),
-  body('trailer_url').optional({ nullable: true }).isURL(),
-  body('genres').optional({ nullable: true }).isArray().withMessage('Genres must be an array of genre names')
+  body('poster_url').trim().isURL().withMessage('Poster must be a valid URL'),
+  body('trailer_url').trim().isURL().withMessage('Trailer must be a valid URL'),
+  body('genres').isArray().withMessage('Genres must be an array of genre names').custom((v) => Array.isArray(v) && v.length > 0).withMessage('Genres cannot be empty'),
+  body('reviews').trim().isLength({ min: 1 }).withMessage('Reviews required')
 ];
 
 const scheduleShowtimeValidator = [

@@ -21,14 +21,22 @@ const addMovie = async (req, res) => {
   if (!errors.isEmpty()) return res.status(422).json({ message: 'Validation failed.', errors: errors.mapped() });
 
   const {
-    title, synopsis, director, cast = [], language, rating,
-    duration_minutes, release_date, poster_url, trailer_url, genres = []
+    title, synopsis, director, producer, cast = [], language, rating,
+    duration_minutes, release_date, poster_url, trailer_url, genres = [], reviews
   } = req.body;
 
   try {
     const movie = await db.Movie.create({
-      title, synopsis, director, language, rating,
-      duration_minutes, release_date, poster_url, trailer_url
+      title,
+      synopsis,
+      director,
+      producer,
+      language,
+      mpaa_rating: rating,
+      duration_minutes,
+      release_date,
+      poster_url,
+      trailer_url
     });
 
     if (Array.isArray(genres) && genres.length) {
@@ -39,10 +47,45 @@ const addMovie = async (req, res) => {
       await movie.setGenres(found);
     }
 
-    return res.status(201).json({ message: 'Movie added', movie });
+    // Return movie plus echoed fields that are validated but not stored in schema (cast, reviews)
+    const movieJson = movie.toJSON();
+    if (cast) movieJson.cast = cast;
+    if (reviews) movieJson.reviews = reviews;
+    return res.status(201).json({ message: 'Movie added', movie: movieJson });
   } catch (e) {
     console.error('addMovie error:', e);
     return res.status(500).json({ message: 'Server error adding movie' });
+  }
+};
+
+// Update movie
+const updateMovie = async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body || {};
+
+  try {
+    const movie = await db.Movie.findByPk(id);
+    if (!movie) return res.status(404).json({ message: 'Movie not found' });
+
+    // Apply simple scalar updates
+    const updatable = ['title', 'synopsis', 'director', 'producer', 'language', 'rating', 'duration_minutes', 'release_date', 'poster_url', 'trailer_url'];
+    updatable.forEach((k) => { if (k in updates) movie[k] = updates[k]; });
+
+    await movie.save();
+
+    // Handle genres if provided (array of names)
+    if (Array.isArray(updates.genres)) {
+      const found = await Promise.all(updates.genres.map(async (name) => {
+        const [g] = await db.Genre.findOrCreate({ where: { name } });
+        return g;
+      }));
+      await movie.setGenres(found);
+    }
+
+    return res.json({ message: 'Movie updated', movie });
+  } catch (e) {
+    console.error('updateMovie error:', e);
+    return res.status(500).json({ message: 'Server error updating movie' });
   }
 };
 
@@ -222,6 +265,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
   adminHome,
   addMovie, listMovies,
+  updateMovie,
   addShowtime, listShowtimes,
   createPromotion, sendPromotion,
   listUsers, addUser, updateUser, deleteUser

@@ -13,6 +13,7 @@ const AdminMoviesPage: React.FC = () => {
   const [castCsv, setCastCsv] = useState('');
   const [director, setDirector] = useState('');
   const [producer, setProducer] = useState('');
+  const [reviews, setReviews] = useState('');
   const [synopsis, setSynopsis] = useState('');
   const [posterUrl, setPosterUrl] = useState('');
   const [trailerUrl, setTrailerUrl] = useState('');
@@ -30,7 +31,13 @@ const AdminMoviesPage: React.FC = () => {
     apiService.fetchApi<{ showrooms: Showroom[] }>('/api/showrooms')
       .then((data) => setShowrooms(data.showrooms || []))
       .catch(() => {});
+    // fetch existing movies for management list
+    apiService.getAdminMovies()
+      .then((d) => setMovies(d.movies || []))
+      .catch(() => {});
   }, []);
+
+  const [movies, setMovies] = useState<any[]>([]);
 
   const addShowtimeRow = () => {
     setShowtimes([...showtimes, { showroom_id: '', start_time: '', end_time: '' }]);
@@ -54,8 +61,8 @@ const AdminMoviesPage: React.FC = () => {
     setError('');
     setSuccess('');
 
-    if (!title || !synopsis || !duration) {
-      setError('Please fill required fields (title, synopsis, duration).');
+    if (!title || !genresCsv || !castCsv || !director || !producer || !synopsis || !posterUrl || !trailerUrl || !rating) {
+      setError('Please fill required fields: title, category, cast, director, producer, synopsis, poster image, trailer video, and rating.');
       return;
     }
 
@@ -65,6 +72,7 @@ const AdminMoviesPage: React.FC = () => {
         title,
         synopsis,
         director,
+        producer,
         // backend accepts cast as string[] per api types
         cast: castCsv ? castCsv.split(',').map(s => s.trim()).filter(Boolean) : undefined,
         language: 'English',
@@ -73,6 +81,7 @@ const AdminMoviesPage: React.FC = () => {
         release_date: releaseDate || undefined,
         poster_url: posterUrl || undefined,
         trailer_url: trailerUrl || undefined,
+        reviews: reviews || undefined,
         genres: genresCsv ? genresCsv.split(',').map(s => s.trim()).filter(Boolean) : undefined,
       };
 
@@ -90,11 +99,31 @@ const AdminMoviesPage: React.FC = () => {
       }
 
       setSuccess('Movie created successfully');
+      // prepend to list so admin sees it immediately
+      setMovies(prev => [createdMovie, ...prev]);
       // reset form
       setTitle(''); setGenresCsv(''); setCastCsv(''); setDirector(''); setProducer(''); setSynopsis(''); setPosterUrl(''); setTrailerUrl(''); setRating('PG-13'); setDuration(100); setReleaseDate(''); setShowtimes([]);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || 'Failed to create movie');
+      // If backend returned validation details, format them for display
+      if (err?.details) {
+        // err.details may be an object from express-validator (errors.mapped())
+        try {
+          const details = err.details;
+          if (typeof details === 'object') {
+            const msgs = Object.values(details).map((d:any) => d.msg || JSON.stringify(d)).join('; ');
+            setError(msgs || (err.message || 'Validation failed'));
+          } else if (Array.isArray(details)) {
+            setError(details.map((d:any)=>d.msg||d).join('; '));
+          } else {
+            setError(String(details));
+          }
+        } catch (e) {
+          setError(err?.message || 'Failed to create movie');
+        }
+      } else {
+        setError(err?.message || 'Failed to create movie');
+      }
     } finally {
       setLoading(false);
     }
@@ -102,7 +131,7 @@ const AdminMoviesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-900 via-black to-red-900 flex flex-col items-center py-10">
-      <div className="mb-6 w-full max-w-4xl px-4">
+      <div className="mb-6 w-full max-w-5xl px-4">
         <button
           className="mb-6 px-6 py-2 rounded-lg bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
           onClick={() => router.push('/pages/admin')}
@@ -111,8 +140,41 @@ const AdminMoviesPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="glass-card p-8 w-full max-w-3xl mb-8">
-        <h1 className="text-2xl font-bold mb-4">Add Movie</h1>
+      <div className="glass-card p-6 w-full max-w-5xl mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-white">Manage Movies</h1>
+          <div>
+            <button className="glass-button mr-2" onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }}>Add Movie</button>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            {movies.length === 0 && (
+              <div className="text-center py-6 text-gray-400 col-span-2">No movies found.</div>
+            )}
+            {movies.map((m) => (
+              <div key={m.id} className="bg-black/40 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {m.poster_url ? (
+                    <img src={m.poster_url} alt={m.title} className="w-16 h-24 object-cover rounded" />
+                  ) : (
+                    <div className="w-16 h-24 bg-gray-800 rounded flex items-center justify-center text-sm text-gray-400">No Poster</div>
+                  )}
+                  <div>
+                    <div className="font-semibold text-white">{m.title}</div>
+                    <div className="text-sm text-gray-300">{m.genres ? (Array.isArray(m.genres) ? m.genres.join(', ') : (m.Genres || []).map((g:any)=>g.name).join(', ')) : ''}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="px-3 py-1 rounded bg-blue-600 text-white text-sm" onClick={() => router.push(`/pages/admin/movies/${m.id}`)}>View / Edit</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <h2 className="text-xl font-semibold mb-4">Add Movie</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block font-semibold">Title *</label>
@@ -177,6 +239,11 @@ const AdminMoviesPage: React.FC = () => {
               <input value={trailerUrl} onChange={e => setTrailerUrl(e.target.value)} className="glass-input w-full" />
             </div>
           </div>
+
+            <div>
+              <label className="block font-semibold">Reviews *</label>
+              <textarea value={reviews} onChange={e => setReviews(e.target.value)} className="glass-input w-full h-20" />
+            </div>
 
           <div className="mt-4">
             <h3 className="font-bold mb-2">Showtimes (optional)</h3>
