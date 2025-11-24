@@ -256,6 +256,57 @@ const loginUser = async (req, res) => {
   }
 };
 
+// Admin Login
+const adminLogin = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    // Find user by email
+    const users = await db.sequelize.query(
+      'SELECT * FROM users WHERE email = $1',
+      { bind: [email], type: db.Sequelize.QueryTypes.SELECT }
+    );
+    if (users.length === 0) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    const user = users[0];
+
+    // Check if user is admin (assuming is_admin boolean column)
+    if (!user.is_admin) {
+      return res.status(403).json({ message: 'Access denied: not an admin' });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({ message: 'Please confirm your email before logging in.' });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Generate tokens (reuse your existing logic)
+    const accessToken = signAccessToken({ id: user.id, email: user.email, is_admin: true }, '1h');
+    const refreshToken = signRefreshToken({ id: user.id, email: user.email, is_admin: true }, '7d');
+
+    await db.sequelize.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at)
+       VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+      { bind: [user.id, refreshToken], type: db.Sequelize.QueryTypes.INSERT }
+    );
+
+    res.status(200).json({
+      message: 'Admin login successful',
+      accessToken,
+      refreshToken,
+      role: 'admin'
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ message: 'Server error during admin login' });
+  }
+};
+
 // Forgot Password
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -376,4 +427,4 @@ const logoutUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, confirmCode , loginUser, forgotPassword, resetPassword, logoutUser};
+module.exports = { registerUser, confirmCode , loginUser, adminLogin, forgotPassword, resetPassword, logoutUser};

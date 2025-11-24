@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, loginUser, forgotPassword, resetPassword, logoutUser, confirmCode } = require('../controllers/authController.js');
+const { registerUser, loginUser, forgotPassword, resetPassword, logoutUser, confirmCode, adminLogin } = require('../controllers/authController.js');
 const { body, validationResult } = require('express-validator');
 const validate = require('../middleware/validate');
 const { registerValidator, loginValidator } = require('../validators/authValidators');
@@ -12,7 +12,7 @@ router.post('/login', loginValidator, validate, loginUser);
 router.post('/forgot-password', forgotPassword);   
 router.post('/reset-password', resetPassword); 
 router.post('/logout', logoutUser);
-
+router.post('/admin-login', adminLogin);
 
 module.exports = router;
 
