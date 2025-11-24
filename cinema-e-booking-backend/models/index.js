@@ -23,6 +23,7 @@ db.Show = require('./Show')(sequelize, Sequelize.DataTypes);
 db.MovieGenre = require('./MovieGenre')(sequelize, Sequelize.DataTypes);
 db.Showroom  = require('./Showroom')(sequelize, Sequelize.DataTypes);
 db.Promotion = require('./Promotion')(sequelize, Sequelize.DataTypes);
+db.PromotionEmail = require('./PromotionEmail')(sequelize, Sequelize.DataTypes);
 db.User = require('./User')(sequelize, Sequelize.DataTypes);
 
 // Associations
@@ -32,5 +33,8 @@ db.Movie.hasMany(db.Show, { foreignKey: 'movie_id' });
 db.Show.belongsTo(db.Movie, { foreignKey: 'movie_id' });
 db.Showroom.hasMany(db.Show, { foreignKey: 'showroom_id' });
 db.Show.belongsTo(db.Showroom, { foreignKey: 'showroom_id' });
+// Associations for promotions audit
+db.Promotion.hasMany(db.PromotionEmail, { foreignKey: 'promotion_id' });
+db.PromotionEmail.belongsTo(db.Promotion, { foreignKey: 'promotion_id' });
 
 module.exports = db;
