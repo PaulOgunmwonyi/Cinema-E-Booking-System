@@ -10,7 +10,8 @@ interface User {
   last_name: string;
   email: string;
   is_admin: boolean;
-  is_active: boolean;
+  is_active: boolean;      // keep if you use it elsewhere
+  is_suspended: boolean;   // add this
 }
 
 const AdminUsersPage = () => {
@@ -145,7 +146,7 @@ const AdminUsersPage = () => {
                 <th className="px-4 py-2">Name</th>
                 <th className="px-4 py-2">Email</th>
                 <th className="px-4 py-2">Admin</th>
-                <th className="px-4 py-2">Active</th>
+                <th className="px-4 py-2">Status</th>
                 <th className="px-4 py-2">Actions</th>
               </tr>
             </thead>
@@ -155,7 +156,7 @@ const AdminUsersPage = () => {
                   <td className="px-4 py-2">{user.first_name} {user.last_name}</td>
                   <td className="px-4 py-2">{user.email}</td>
                   <td className="px-4 py-2">{user.is_admin ? 'Yes' : 'No'}</td>
-                  <td className="px-4 py-2">{user.is_active ? 'Yes' : 'No'}</td>
+                  <td className="px-4 py-2">{user.is_suspended ? 'Suspended' : 'Active'}</td>
                   <td className="px-4 py-2 space-x-2">
                     <button
                       className="px-2 py-1 bg-blue-600 rounded text-white"
@@ -164,10 +165,16 @@ const AdminUsersPage = () => {
                       {user.is_admin ? 'Revoke Admin' : 'Make Admin'}
                     </button>
                     <button
-                      className="px-2 py-1 bg-yellow-600 rounded text-white"
-                      onClick={() => handleUpdateUser(user.id, { is_active: !user.is_active })}
+                      className={`px-2 py-1 rounded text-white ${user.is_admin ? 'bg-gray-400 cursor-not-allowed' : 'bg-yellow-600'}`}
+                      onClick={() => {
+                        if (!user.is_admin) {
+                          handleUpdateUser(user.id, { is_suspended: !user.is_suspended });
+                        }
+                      }}
+                      disabled={user.is_admin}
+                      title={user.is_admin ? "Cannot suspend another admin" : ""}
                     >
-                      {user.is_active ? 'Suspend' : 'Activate'}
+                      {user.is_suspended ? 'Unsuspend' : 'Suspend'}
                     </button>
                     <button
                       className="px-2 py-1 bg-red-600 rounded text-white"
