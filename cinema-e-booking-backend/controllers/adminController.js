@@ -125,7 +125,7 @@ const sendPromotion = async (req, res) => {
     if (!promo) return res.status(404).json({ message: 'Promotion not found' });
 
     const subscribers = await db.sequelize.query(
-      `SELECT email, first_name FROM users WHERE promo_opt_in = true AND is_active = true`,
+      `SELECT email, first_name FROM users WHERE promo_opt_in = true AND is_suspended = false`,
       { type: db.Sequelize.QueryTypes.SELECT }
     );
 
@@ -172,6 +172,7 @@ const addUser = async (req, res) => {
     password_hash,
     is_admin: !!is_admin,
     is_active: true,
+    is_suspended: false,
     first_name: '',
     last_name: ''
   });
@@ -188,6 +189,7 @@ const updateUser = async (req, res) => {
   if ('is_active' in updates) user.is_active = updates.is_active;
   if ('first_name' in updates) user.first_name = updates.first_name;
   if ('last_name' in updates) user.last_name = updates.last_name;
+  if ('is_suspended' in updates) user.is_suspended = updates.is_suspended;
   await user.save();
   res.json({ message: 'User updated', user: { ...user.toJSON(), password_hash: undefined } });
 };

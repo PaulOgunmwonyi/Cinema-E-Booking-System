@@ -21,6 +21,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    is_suspended: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     promo_opt_in: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
