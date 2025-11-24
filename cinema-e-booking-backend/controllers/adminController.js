@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const db = require('../models');
 const { sendEmail } = require('../services/emailService');
 const bcrypt = require('bcrypt');
+const { generateSeatsForShow } = require('./bookingController');
 
 const adminHome = async (req, res) => {
   return res.json({
@@ -57,8 +58,6 @@ const addShowtime = async (req, res) => {
 
   const { movie_id, showroom_id, start_time, end_time } = req.body;
 
-
-
   try {
     const [movie, showroom] = await Promise.all([
       db.Movie.findByPk(movie_id),
@@ -72,10 +71,27 @@ const addShowtime = async (req, res) => {
       return res.status(409).json({ message: 'Scheduling conflict: this showroom already has a show at that time.' });
     }
 
+    // Create the show
     const show = await db.Show.create({ movie_id, showroom_id, start_time, end_time });
-    return res.status(201).json({ message: 'Showtime added', show });
-  } catch (e) {
     
+    // Automatically generate show-specific seats based on showroom layout
+    try {
+      await generateSeatsForShow(show.id, showroom_id);
+      console.log(`Generated seats for new show: ${show.id}`);
+    } catch (seatError) {
+      console.error('Failed to generate seats for new show:', seatError);
+      // Don't fail the show creation if seat generation fails
+      // The fetchAvailableSeats endpoint will handle this later
+    }
+    
+    return res.status(201).json({ 
+      message: 'Showtime added successfully', 
+      show: {
+        ...show.toJSON(),
+        seats_generated: true
+      }
+    });
+  } catch (e) {
     if (String(e).includes('uniq_show_showroom_start')) {
       return res.status(409).json({ message: 'Scheduling conflict: this showroom already has a show at that time.' });
     }
