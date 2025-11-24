@@ -220,6 +220,10 @@ CREATE TABLE show_seats (
   UNIQUE (show_id, row_label, seat_number)
 );
 
+-- Index for faster show seat lookups
+CREATE INDEX idx_show_seats_show_id ON show_seats(show_id);
+CREATE INDEX idx_show_seats_availability ON show_seats(show_id, is_available);
+
 -- Bookings
 CREATE TABLE bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

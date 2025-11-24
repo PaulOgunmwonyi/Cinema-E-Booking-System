@@ -240,5 +240,52 @@ BEGIN
     END LOOP;
 END $$;
 
+-- =========================
+-- Show Seats (Generate seats for each show from hall templates)
+-- =========================
+
+-- Generate show-specific seats for all existing shows
+DO $$
+DECLARE
+    show_record RECORD;
+    hall_seat_record RECORD;
+    seat_count INT := 0;
+BEGIN
+    -- Loop through all shows
+    FOR show_record IN 
+        SELECT s.id as show_id, s.showroom_id, m.title as movie_title, sr.name as showroom_name
+        FROM shows s
+        JOIN movies m ON m.id = s.movie_id
+        JOIN showrooms sr ON sr.id = s.showroom_id
+        ORDER BY s.start_time
+    LOOP
+        -- For each show, copy all hall seats for that showroom
+        FOR hall_seat_record IN 
+            SELECT row_label, seat_number 
+            FROM hall_seats 
+            WHERE hall_id = show_record.showroom_id
+            ORDER BY row_label, seat_number
+        LOOP
+            INSERT INTO show_seats (show_id, row_label, seat_number, is_available)
+            VALUES (
+                show_record.show_id, 
+                hall_seat_record.row_label, 
+                hall_seat_record.seat_number, 
+                TRUE
+            );
+            seat_count := seat_count + 1;
+        END LOOP;
+        
+        RAISE NOTICE 'Generated seats for show: % in % (Show ID: %)', 
+            show_record.movie_title, show_record.showroom_name, show_record.show_id;
+    END LOOP;
+    
+    RAISE NOTICE 'Total show seats generated: %', seat_count;
+    
+    -- Verify the generation
+    SELECT COUNT(*) INTO seat_count FROM show_seats;
+    RAISE NOTICE 'Verification: % show seats exist in database', seat_count;
+END $$;
+
 
 
