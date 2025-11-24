@@ -7,6 +7,7 @@ import { apiService } from '../../../utils/api';
 interface Movie {
   id: number | string;
   title: string;
+  duration_minutes: number; // <-- use this instead of runtime
 }
 
 interface Showroom {
@@ -86,6 +87,21 @@ const AdminShowtimesPage = () => {
     }
   };
 
+  // Only update if both a movie and start time are selected
+  useEffect(() => {
+    const movie = movies.find(m => String(m.id) === String(selectedMovie));
+    if (movie && startTime) {
+      const start = new Date(startTime);
+      if (!isNaN(start.getTime())) {
+        const end = new Date(start.getTime() + movie.duration_minutes * 60000);
+        // Format as yyyy-MM-ddTHH:mm for datetime-local input
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const formatted = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}`;
+        setEndTime(formatted);
+      }
+    }
+  }, [selectedMovie, startTime, movies]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-900 via-black to-red-900 flex flex-col items-center py-10">
       <button
@@ -143,6 +159,7 @@ const AdminShowtimesPage = () => {
               onChange={(e) => setEndTime(e.target.value)}
               className="glass-input w-full px-4 py-2 rounded-lg text-white bg-black"
               required
+              readOnly // <-- Add this
             />
           </div>
           {error && <div className="text-red-400">{error}</div>}
