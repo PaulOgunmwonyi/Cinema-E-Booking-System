@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const db = require('../models');
 const { sendEmail } = require('../services/emailService');
+const bcrypt = require('bcrypt');
 
 const adminHome = async (req, res) => {
   return res.json({
@@ -153,9 +154,57 @@ const sendPromotion = async (req, res) => {
   }
 };
 
+// List all users
+const listUsers = async (req, res) => {
+  const users = await db.User.findAll({ attributes: { exclude: ['password_hash'] } });
+  res.json({ users });
+};
+
+// Add new admin
+const addUser = async (req, res) => {
+  const { email, password, is_admin } = req.body;
+  if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
+  const existing = await db.User.findOne({ where: { email } });
+  if (existing) return res.status(400).json({ message: 'User already exists' });
+  const password_hash = await bcrypt.hash(password, 10);
+  const user = await db.User.create({
+    email,
+    password_hash,
+    is_admin: !!is_admin,
+    is_active: true,
+    first_name: '',
+    last_name: ''
+  });
+  res.status(201).json({ message: 'User created', user: { ...user.toJSON(), password_hash: undefined } });
+};
+
+// Update user (admin status, suspend/activate, etc.)
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  const user = await db.User.findByPk(id);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  if ('is_admin' in updates) user.is_admin = updates.is_admin;
+  if ('is_active' in updates) user.is_active = updates.is_active;
+  if ('first_name' in updates) user.first_name = updates.first_name;
+  if ('last_name' in updates) user.last_name = updates.last_name;
+  await user.save();
+  res.json({ message: 'User updated', user: { ...user.toJSON(), password_hash: undefined } });
+};
+
+// Delete user
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  const user = await db.User.findByPk(id);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  await user.destroy();
+  res.json({ message: 'User deleted' });
+};
+
 module.exports = {
   adminHome,
   addMovie, listMovies,
   addShowtime, listShowtimes,
-  createPromotion, sendPromotion
+  createPromotion, sendPromotion,
+  listUsers, addUser, updateUser, deleteUser
 };

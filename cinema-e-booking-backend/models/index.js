@@ -17,12 +17,13 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 // Import models
-db.Movie = require('./Movie')(sequelize);
-db.Genre = require('./Genre')(sequelize);
-db.Show = require('./Show')(sequelize);
-db.MovieGenre = require('./MovieGenre')(sequelize);
-db.Showroom  = require('./Showroom')(sequelize);
-db.Promotion = require('./Promotion')(sequelize);
+db.Movie = require('./Movie')(sequelize, Sequelize.DataTypes);
+db.Genre = require('./Genre')(sequelize, Sequelize.DataTypes);
+db.Show = require('./Show')(sequelize, Sequelize.DataTypes);
+db.MovieGenre = require('./MovieGenre')(sequelize, Sequelize.DataTypes);
+db.Showroom  = require('./Showroom')(sequelize, Sequelize.DataTypes);
+db.Promotion = require('./Promotion')(sequelize, Sequelize.DataTypes);
+db.User = require('./User')(sequelize, Sequelize.DataTypes);
 
 // Associations
 db.Movie.belongsToMany(db.Genre, { through: db.MovieGenre, foreignKey: 'movie_id' });

@@ -29,13 +29,14 @@ const AdminLoginPage = () => {
     setIsSubmitting(true);
     try {
       const res = await apiService.adminLogin({ email, password });
-      // Set admin session so the navbar shows "Admin Logout"
+      // Set admin session and save refresh token
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('isAdmin', '1');
-        // Optionally, you can also dispatch a storage event to notify other tabs/components:
+        if (res.refreshToken) {
+          sessionStorage.setItem('refreshToken', res.refreshToken);
+        }
         window.dispatchEvent(new Event('storage'));
       }
-      // Save tokens or admin session as needed
       router.push('/pages/admin');
     } catch (err: any) {
       setError(err?.message || 'Admin login failed');
