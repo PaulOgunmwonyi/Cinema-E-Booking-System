@@ -87,6 +87,20 @@ const AdminShowtimesPage = () => {
     }
   };
 
+  const handleDeleteShowtime = async (showId: number | string) => {
+    setError('');
+    setSuccess('');
+    try {
+      await apiService.fetchApi(`/api/admin/showtimes/${showId}`, {
+        method: 'DELETE',
+      });
+      setSuccess('Showtime deleted successfully!');
+      fetchShows();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to delete showtime.');
+    }
+  };
+
   // Only update if both a movie and start time are selected
   useEffect(() => {
     const movie = movies.find(m => String(m.id) === String(selectedMovie));
@@ -183,12 +197,13 @@ const AdminShowtimesPage = () => {
                 <th className="px-4 py-2">Showroom</th>
                 <th className="px-4 py-2">Start Time</th>
                 <th className="px-4 py-2">End Time</th>
+                <th className="px-4 py-2">Actions</th> {/* New column for actions */}
               </tr>
             </thead>
             <tbody>
               {shows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center py-4 text-gray-400">No showtimes scheduled.</td>
+                  <td colSpan={5} className="text-center py-4 text-gray-400">No showtimes scheduled.</td>
                 </tr>
               )}
               {shows.map((show) => (
@@ -197,6 +212,14 @@ const AdminShowtimesPage = () => {
                   <td className="px-4 py-2">{show.Showroom?.name || 'N/A'}</td>
                   <td className="px-4 py-2">{new Date(show.start_time).toLocaleString()}</td>
                   <td className="px-4 py-2">{new Date(show.end_time).toLocaleString()}</td>
+                  <td className="px-4 py-2">
+                    <button
+                      className="px-3 py-1 bg-red-600 rounded text-white hover:bg-red-700 transition"
+                      onClick={() => handleDeleteShowtime(show.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
