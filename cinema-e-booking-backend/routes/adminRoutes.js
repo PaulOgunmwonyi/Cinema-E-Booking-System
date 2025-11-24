@@ -12,6 +12,7 @@ const {
   adminHome,
   addMovie, listMovies,
   addShowtime, listShowtimes,
+  deleteShowtime,
   listUsers, addUser, updateUser, deleteUser,
   updateMovie
 } = require('../controllers/adminController');
@@ -28,6 +29,7 @@ router.put('/movies/:id', updateMovie);
 // Showtimes
 router.post('/showtimes', scheduleShowtimeValidator, validate, addShowtime);
 router.get('/showtimes', listShowtimes);
+router.delete('/showtimes/:id', deleteShowtime);
 
 // Promotions
 router.post('/promotions', promotionValidator, validate, createPromotion);

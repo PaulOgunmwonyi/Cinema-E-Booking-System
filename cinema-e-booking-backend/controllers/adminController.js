@@ -262,11 +262,26 @@ const deleteUser = async (req, res) => {
   res.json({ message: 'User deleted' });
 };
 
+// Delete showtime
+const deleteShowtime = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const show = await db.Show.findByPk(id);
+    if (!show) return res.status(404).json({ message: 'Showtime not found' });
+    await show.destroy();
+    return res.json({ message: 'Showtime deleted' });
+  } catch (e) {
+    console.error('deleteShowtime error:', e);
+    return res.status(500).json({ message: 'Server error deleting showtime' });
+  }
+};
+
 module.exports = {
   adminHome,
   addMovie, listMovies,
   updateMovie,
   addShowtime, listShowtimes,
+  deleteShowtime,
   createPromotion, sendPromotion,
   listUsers, addUser, updateUser, deleteUser
 };
