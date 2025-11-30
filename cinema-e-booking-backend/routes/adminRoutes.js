@@ -15,7 +15,7 @@ const {
   deleteShowtime,
   listUsers, addUser, updateUser, deleteUser,
   updateMovie
-} = require('../controllers/adminController');
+} = require('../controllers/admin/adminController');
 
 const { createPromotion, sendPromotion, listPromotions } = require('../controllers/admin/promotionsController');
 

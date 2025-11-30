@@ -1,8 +1,8 @@
 const { validationResult } = require('express-validator');
-const db = require('../models');
-const { sendEmail } = require('../services/emailService');
+const db = require('../../models');
+const { sendEmail } = require('../../services/emailService');
 const bcrypt = require('bcrypt');
-const { generateSeatsForShow } = require('./bookingController');
+const { generateSeatsForShow } = require('../bookingController');
 
 const adminHome = async (req, res) => {
   return res.json({

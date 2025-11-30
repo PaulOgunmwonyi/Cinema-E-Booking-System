@@ -232,7 +232,10 @@ CREATE TABLE bookings (
   booking_number SERIAL UNIQUE,
   total_amount NUMERIC(10,2) NOT NULL,
   promotion_id UUID REFERENCES promotions(id) ON DELETE SET NULL,
-  status TEXT DEFAULT 'CONFIRMED',     
+  status TEXT DEFAULT 'CONFIRMED', 
+  tax_amount NUMERIC(10,2) DEFAULT 0,
+  booking_fee NUMERIC(10,2) DEFAULT 0,
+  discount_amount NUMERIC(10,2) DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );

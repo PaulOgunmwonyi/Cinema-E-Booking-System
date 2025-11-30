@@ -1,7 +1,7 @@
 const db = require('../models');
 const { v4: uuidv4 } = require('uuid');
+const { sendEmail } = require('../services/emailService');
 
-// Helper function to generate seats for a show based on its showroom layout
 const generateSeatsForShow = async (showId, showroomId) => {
   try {
     // Get all hall seats for the showroom
@@ -15,7 +15,7 @@ const generateSeatsForShow = async (showId, showroomId) => {
       return;
     }
 
-    // Create show-specific seats based on hall layout
+    // show-specific seats based on hall layout
     const showSeatsData = hallSeats.map(seat => ({
       id: uuidv4(),
       show_id: showId,
@@ -24,7 +24,6 @@ const generateSeatsForShow = async (showId, showroomId) => {
       is_available: true
     }));
 
-    // Batch insert all seats
     await db.sequelize.query(
       `INSERT INTO show_seats (id, show_id, row_label, seat_number, is_available) 
        VALUES ${showSeatsData.map(() => '(?, ?, ?, ?, ?)').join(', ')}`,
@@ -47,7 +46,6 @@ exports.fetchAvailableSeats = async (req, res) => {
   try {
     const show_id = req.params.show_id.trim();
 
-    // Fetch show with showroom information
     const show = await db.Show.findByPk(show_id, {
       include: [{
         model: db.Showroom,
@@ -57,7 +55,6 @@ exports.fetchAvailableSeats = async (req, res) => {
     
     if (!show) return res.status(404).json({ message: 'Show not found' });
 
-    // Get show-specific seats instead of hall seats
     const seats = await db.sequelize.query(
       `SELECT id, row_label, seat_number, is_available
        FROM show_seats
@@ -66,12 +63,10 @@ exports.fetchAvailableSeats = async (req, res) => {
       { bind: [show_id], type: db.Sequelize.QueryTypes.SELECT }
     );
 
-    // If no show-specific seats exist, generate them from the hall template
     if (seats.length === 0) {
       console.log(`No seats found for show ${show_id}, generating from hall template...`);
       await generateSeatsForShow(show_id, show.showroom_id);
       
-      // Retry fetching seats
       const newSeats = await db.sequelize.query(
         `SELECT id, row_label, seat_number, is_available
          FROM show_seats
@@ -107,67 +102,284 @@ exports.fetchAvailableSeats = async (req, res) => {
 };
 
 
+//reserve seats
 exports.reserveSeats = async (req, res) => {
   const t = await db.sequelize.transaction();
-  try {
-    const { user_id, show_id, seat_ids, ticket_category, price } = req.body;
-    if (!user_id || !show_id || !Array.isArray(seat_ids) || seat_ids.length === 0)
-      return res.status(400).json({ message: 'Invalid booking request' });
 
-    // Check that all seats are available for this specific show
+  try {
+    const { user_id, show_id, tickets, promotion_code = null } = req.body;
+
+    if (!user_id || !show_id || !Array.isArray(tickets) || tickets.length === 0) {
+      await t.rollback();
+      return res.status(400).json({ message: "Invalid booking request" });
+    }
+
+    // LOCK SEATS 
+    const seat_ids = tickets.map(t => t.seat_id);
+
     const seats = await db.sequelize.query(
-      `SELECT id, is_available, row_label, seat_number FROM show_seats WHERE id = ANY($1) AND show_id = $2 FOR UPDATE`,
-      { bind: [seat_ids, show_id], type: db.Sequelize.QueryTypes.SELECT, transaction: t }
+      `SELECT id, is_available, row_label, seat_number 
+       FROM show_seats 
+       WHERE id = ANY($1) AND show_id = $2 
+       FOR UPDATE`,
+      {
+        bind: [seat_ids, show_id],
+        type: db.Sequelize.QueryTypes.SELECT,
+        transaction: t
+      }
     );
 
-    // Verify all requested seats exist for this show
     if (seats.length !== seat_ids.length) {
       await t.rollback();
-      return res.status(400).json({ message: 'Some seats do not exist for this show' });
+      return res.status(400).json({ message: "Some seats do not exist for this show" });
     }
 
+    // Check availability
     const unavailable = seats.filter(s => !s.is_available);
-    if (unavailable.length) {
+    if (unavailable.length > 0) {
       await t.rollback();
-      return res.status(409).json({ message: 'Some seats are already booked', unavailable });
+      return res.status(409).json({
+        message: "Some seats are already booked",
+        unavailable
+      });
     }
 
-    // Mark seats unavailable for this specific show
     await db.sequelize.query(
-      `UPDATE show_seats SET is_available = false WHERE id = ANY($1) AND show_id = $2`,
-      { bind: [seat_ids, show_id], transaction: t }
+      `UPDATE show_seats SET is_available = false 
+       WHERE id = ANY($1) AND show_id = $2`,
+      {
+        bind: [seat_ids, show_id],
+        transaction: t
+      }
     );
 
-    // Create booking record
-    const bookingId = uuidv4();
-    const totalAmount = seat_ids.length * parseFloat(price || 0);
-    await db.sequelize.query(
-      `INSERT INTO bookings (id, user_id, show_id, total_amount, status)
-       VALUES ($1, $2, $3, $4, 'CONFIRMED')`,
-      { bind: [bookingId, user_id, show_id, totalAmount], transaction: t }
-    );
+    const subtotal = tickets.reduce((sum, t) => sum + parseFloat(t.price), 0);
 
-    // Create tickets using the seat data we already have
-    for (const seat of seats) {
-      const seatLabel = `${seat.row_label}${seat.seat_number}`;
-      await db.sequelize.query(
-        `INSERT INTO tickets (id, booking_id, show_id, seat_number, ticket_category, price)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+    let booking_fee = 0;
+    const feeRow = await db.sequelize.query(
+      `SELECT fee FROM booking_fees ORDER BY created_at DESC LIMIT 1`,
+      { type: db.Sequelize.QueryTypes.SELECT, transaction: t }
+    );
+    if (feeRow.length > 0) {
+      booking_fee = parseFloat(feeRow[0].fee);
+    }
+
+    // Tax
+    const TAX_RATE = 7.0 / 100;
+    const tax_amount = parseFloat((subtotal * TAX_RATE).toFixed(2));
+
+    let discount_amount = 0;
+    let promotion_id = null;
+
+    if (promotion_code && promotion_code.trim() !== "") {
+      const promos = await db.sequelize.query(
+        `SELECT id, discount_percent, discount_amount
+         FROM promotions
+         WHERE code = $1
+           AND CURRENT_DATE BETWEEN start_date AND end_date`,
         {
-          bind: [uuidv4(), bookingId, show_id, seatLabel, ticket_category, price],
+          bind: [promotion_code.trim()],
+          type: db.Sequelize.QueryTypes.SELECT,
+          transaction: t
+        }
+      );
+
+      if (promos.length === 0) {
+        await t.rollback();
+        return res.status(400).json({ message: "Invalid or expired promo code" });
+      }
+
+      const promo = promos[0];
+      promotion_id = promo.id;
+
+      if (promo.discount_percent) {
+        discount_amount += subtotal * (promo.discount_percent / 100);
+      }
+      if (promo.discount_amount) {
+        discount_amount += parseFloat(promo.discount_amount);
+      }
+
+      if (discount_amount > subtotal) discount_amount = subtotal;
+    }
+
+    discount_amount = parseFloat(discount_amount.toFixed(2));
+
+    const total_amount = parseFloat(
+      (subtotal + tax_amount + booking_fee - discount_amount).toFixed(2)
+    );
+
+    // BOOKING 
+    const booking_id = uuidv4();
+
+    await db.sequelize.query(
+      `INSERT INTO bookings (
+         id, user_id, show_id, total_amount, promotion_id,
+         tax_amount, booking_fee, discount_amount, status
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'CONFIRMED')`,
+      {
+        bind: [
+          booking_id,
+          user_id,
+          show_id,
+          total_amount,
+          promotion_id,
+          tax_amount,
+          booking_fee,
+          discount_amount
+        ],
+        transaction: t
+      }
+    );
+
+    for (const tkt of tickets) {
+      const seat = seats.find(s => s.id === tkt.seat_id);
+      const label = `${seat.row_label}${seat.seat_number}`;
+
+      await db.sequelize.query(
+        `INSERT INTO tickets (
+           id, booking_id, show_id, seat_number, ticket_category, price
+         )
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        {
+          bind: [
+            uuidv4(),
+            booking_id,
+            show_id,
+            label,
+            tkt.ticket_category,
+            tkt.price
+          ],
           transaction: t
         }
       );
     }
 
     await t.commit();
-    return res.status(201).json({ message: 'Booking confirmed', booking_id: bookingId });
+
+    const bookingNumRow = await db.sequelize.query(
+      `SELECT booking_number FROM bookings WHERE id = $1`,
+      {
+        bind: [booking_id],
+        type: db.Sequelize.QueryTypes.SELECT
+      }
+    );
+
+    return res.status(201).json({
+      message: "Booking confirmed",
+      booking_id,
+      booking_number: bookingNumRow[0].booking_number,
+      subtotal,
+      tax_amount,
+      booking_fee,
+      discount_amount,
+      total_amount
+    });
+
   } catch (err) {
-    await t.rollback();
-    console.error('reserveSeats error:', err);
-    return res.status(500).json({ message: 'Server error reserving seats' });
+    if (!t.finished) {
+      await t.rollback();
+    }
+    console.error("reserveSeats error:", err);
+    return res.status(500).json({ message: "Server error reserving seats" });
   }
 };
 
-// Export the seat generation function for use by admin controllers
+
+exports.getOrderHistory = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const bookings = await db.sequelize.query(
+      `SELECT 
+         b.id,
+         b.booking_number,
+         b.total_amount,
+         b.tax_amount,
+         b.booking_fee,
+         b.discount_amount,
+         b.status,
+         b.created_at,
+         m.title AS movie_title,
+         s.start_time,
+         s.end_time,
+         sr.name AS showroom_name
+       FROM bookings b
+       JOIN shows s ON b.show_id = s.id
+       JOIN movies m ON s.movie_id = m.id
+       JOIN showrooms sr ON s.showroom_id = sr.id
+       WHERE b.user_id = $1
+       ORDER BY b.created_at DESC`,
+      {
+        bind: [userId],
+        type: db.Sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    return res.json({ bookings });
+  } catch (err) {
+    console.error('getOrderHistory error:', err);
+    return res.status(500).json({ message: 'Server error fetching order history' });
+  }
+};
+
+exports.getBookingDetails = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id;
+    const bookingId = req.params.booking_id.trim();
+
+    const [booking] = await db.sequelize.query(
+      `SELECT 
+         b.id,
+         b.booking_number,
+         b.total_amount,
+         b.tax_amount,
+         b.booking_fee,
+         b.discount_amount,
+         b.status,
+         b.created_at,
+         m.title AS movie_title,
+         s.start_time,
+         s.end_time,
+         sr.name AS showroom_name,
+         p.code AS promotion_code
+       FROM bookings b
+       JOIN shows s ON b.show_id = s.id
+       JOIN movies m ON s.movie_id = m.id
+       JOIN showrooms sr ON s.showroom_id = sr.id
+       LEFT JOIN promotions p ON b.promotion_id = p.id
+       WHERE b.id = $1 AND b.user_id = $2`,
+      {
+        bind: [bookingId, userId],
+        type: db.Sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    const tickets = await db.sequelize.query(
+      `SELECT seat_number, ticket_category, price
+       FROM tickets
+       WHERE booking_id = $1
+       ORDER BY seat_number`,
+      {
+        bind: [bookingId],
+        type: db.Sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    return res.json({ booking, tickets });
+  } catch (err) {
+    console.error('getBookingDetails error:', err);
+    return res
+      .status(500)
+      .json({ message: 'Server error fetching booking details' });
+  }
+};
+
 exports.generateSeatsForShow = generateSeatsForShow;
