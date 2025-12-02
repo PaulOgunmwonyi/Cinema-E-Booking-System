@@ -107,7 +107,7 @@ exports.reserveSeats = async (req, res) => {
   const t = await db.sequelize.transaction();
 
   try {
-    const { user_id, show_id, tickets, promotion_code = null } = req.body;
+    const { user_id, show_id, tickets, promotion_code = null, payment = {} } = req.body;
 
     if (!user_id || !show_id || !Array.isArray(tickets) || tickets.length === 0) {
       await t.rollback();
@@ -208,15 +208,40 @@ exports.reserveSeats = async (req, res) => {
       (subtotal + tax_amount + booking_fee - discount_amount).toFixed(2)
     );
 
+    // Handle payment information
+    let payment_card_id = null;
+    
+    if (payment && payment.payment_card_id) {
+      // Using existing saved card
+      payment_card_id = payment.payment_card_id;
+      
+      // Verify the card belongs to the user
+      const cardCheck = await db.sequelize.query(
+        `SELECT id FROM payment_cards WHERE id = $1 AND user_id = $2`,
+        {
+          bind: [payment_card_id, user_id],
+          type: db.Sequelize.QueryTypes.SELECT,
+          transaction: t
+        }
+      );
+      
+      if (cardCheck.length === 0) {
+        await t.rollback();
+        return res.status(400).json({ message: "Invalid payment card selected" });
+      }
+    } else if (payment && payment.card_number && payment.expiration_date && payment.cvv) {
+      console.log('Processing payment with new card details (not stored)');
+    }
+
     // BOOKING 
     const booking_id = uuidv4();
 
     await db.sequelize.query(
       `INSERT INTO bookings (
          id, user_id, show_id, total_amount, promotion_id,
-         tax_amount, booking_fee, discount_amount, status
+         tax_amount, booking_fee, discount_amount, payment_card_id, status
        )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'CONFIRMED')`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'CONFIRMED')`,
       {
         bind: [
           booking_id,
@@ -226,7 +251,8 @@ exports.reserveSeats = async (req, res) => {
           promotion_id,
           tax_amount,
           booking_fee,
-          discount_amount
+          discount_amount,
+          payment_card_id
         ],
         transaction: t
       }

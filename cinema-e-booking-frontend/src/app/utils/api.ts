@@ -391,11 +391,21 @@ class ApiService {
   async reserveSeats(bookingData: {
     user_id: string;
     show_id: string;
-    seat_ids: string[];
-    ticket_category: string;
-    price: number;
-  }): Promise<{ message: string; booking_id: string }> {
-    return this.fetchApi<{ message: string; booking_id: string }>('/api/bookings/reserve', {
+    tickets: Array<{
+      seat_id: string;
+      ticket_category: string;
+      price: number;
+    }>;
+    payment?: {
+      payment_card_id?: string;
+      card_type?: string;
+      card_number?: string;
+      expiration_date?: string;
+      cvv?: string;
+    };
+    promotion_code?: string;
+  }): Promise<{ message: string; booking_id: string; booking_number: number; subtotal: number; tax_amount: number; booking_fee: number; discount_amount: number; total_amount: number }> {
+    return this.fetchApi<{ message: string; booking_id: string; booking_number: number; subtotal: number; tax_amount: number; booking_fee: number; discount_amount: number; total_amount: number }>('/api/bookings/reserve', {
       method: 'POST',
       body: JSON.stringify(bookingData),
     }, true);

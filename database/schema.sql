@@ -158,6 +158,7 @@ CREATE TABLE payment_cards (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   card_type VARCHAR(20),
   card_number_encrypted TEXT,
+  card_number_hash TEXT,
   expiration_date VARCHAR (10),
   is_default BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -232,6 +233,7 @@ CREATE TABLE bookings (
   booking_number SERIAL UNIQUE,
   total_amount NUMERIC(10,2) NOT NULL,
   promotion_id UUID REFERENCES promotions(id) ON DELETE SET NULL,
+  payment_card_id UUID REFERENCES payment_cards(id) ON DELETE SET NULL,
   status TEXT DEFAULT 'CONFIRMED', 
   tax_amount NUMERIC(10,2) DEFAULT 0,
   booking_fee NUMERIC(10,2) DEFAULT 0,
@@ -254,5 +256,8 @@ CREATE TABLE tickets (
 -- Prevent scheduling conflicts: one show per showroom per exact start_time
 CREATE UNIQUE INDEX uniq_show_showroom_start
   ON shows (showroom_id, start_time);
+
+-- Index for faster payment card lookups in bookings
+CREATE INDEX idx_bookings_payment_card ON bookings(payment_card_id);
 
 
