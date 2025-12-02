@@ -286,6 +286,19 @@ BEGIN
     SELECT COUNT(*) INTO seat_count FROM show_seats;
     RAISE NOTICE 'Verification: % show seats exist in database', seat_count;
 END $$;
+-- =========================
+-- Ticket Prices
+-- =========================
+INSERT INTO ticket_prices (category, price) VALUES
+  ('adult', 12.00),
+  ('senior', 9.00),
+  ('child', 8.00),
+  ('student', 10.00);
+
+-- =========================
+-- Booking Fees
+-- =========================
+INSERT INTO booking_fees (fee) VALUES (5.00);
 
 
 

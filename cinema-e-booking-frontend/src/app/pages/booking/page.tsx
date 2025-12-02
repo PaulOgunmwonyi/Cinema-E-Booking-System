@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Movie, apiService } from '../../utils/api';
 import { useUser } from '../../contexts/UserContext';
@@ -34,6 +34,19 @@ interface Seat {
   isSelected: boolean;
 }
 
+interface PaymentCard {
+  id: string;
+  card_type: string;
+  expiration_date: string;
+}
+
+interface NewCardData {
+  cardType: string;
+  cardNumber: string;
+  expirationDate: string;
+  cvv: string;
+}
+
 function BookingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -44,6 +57,16 @@ function BookingContent() {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeatInfo[]>([]);
   const [showroomName, setShowroomName] = useState<string>('');
+  const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string>('');
+  const [showNewCardForm, setShowNewCardForm] = useState<boolean>(false);
+  const [newCardData, setNewCardData] = useState<NewCardData>({
+    cardType: 'VISA',
+    cardNumber: '',
+    expirationDate: '',
+    cvv: ''
+  });
+  const [savingCard, setSavingCard] = useState<boolean>(false);
   const hasRestoredState = useRef(false);
   const hasLoadedSeats = useRef(false);
 
@@ -56,6 +79,96 @@ function BookingContent() {
 
   // Helper function to create seat display name
   const getSeatDisplayName = (seat: Seat) => `${seat.row_label}${seat.seat_number}`;
+
+  // Fetch payment cards for logged in users
+  const fetchPaymentCards = useCallback(async (autoSelectNewest = false) => {
+    if (!isLoggedIn) {
+      setPaymentCards([]);
+      return;
+    }
+    
+    try {
+      const profile = await apiService.getProfile();
+      setPaymentCards(profile.cards || []);
+      
+      // Auto-select first card if available and no card is selected
+      if (profile.cards && profile.cards.length > 0) {
+        if (!selectedCardId) {
+          setSelectedCardId(profile.cards[0].id);
+        } else if (autoSelectNewest) {
+          // When adding a new card, select the most recently added one (last in array)
+          const newestCard = profile.cards[profile.cards.length - 1];
+          setSelectedCardId(newestCard.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching payment cards:', error);
+      setPaymentCards([]);
+    }
+  }, [isLoggedIn, selectedCardId]);
+
+  // Fetch payment cards when user logs in
+  useEffect(() => {
+    fetchPaymentCards();
+  }, [isLoggedIn, fetchPaymentCards]);
+
+  // Handle adding a new payment card
+  const handleAddNewCard = async () => {
+    // Check card limit
+    if (paymentCards.length >= 4) {
+      alert('You can only store up to 4 payment cards.');
+      return;
+    }
+
+    if (!newCardData.cardNumber || !newCardData.expirationDate || !newCardData.cvv) {
+      alert('Please fill out all card fields.');
+      return;
+    }
+
+    // Basic validation
+    if (newCardData.cardNumber.replace(/\s/g, '').length < 13) {
+      alert('Please enter a valid card number.');
+      return;
+    }
+
+    if (!/^\d{2}\/\d{2}$/.test(newCardData.expirationDate)) {
+      alert('Please enter expiry date in MM/YY format.');
+      return;
+    }
+
+    if (newCardData.cvv.length < 3 || newCardData.cvv.length > 4) {
+      alert('Please enter a valid CVV.');
+      return;
+    }
+
+    setSavingCard(true);
+    try {
+      // Call API to save the card
+      await apiService.addPaymentCard({
+        cardType: newCardData.cardType,
+        cardNumber: newCardData.cardNumber,
+        expirationDate: newCardData.expirationDate,
+      });
+
+      // Refresh the payment cards list and auto-select the new card
+      await fetchPaymentCards(true);
+
+      // Reset the form and close it
+      setNewCardData({cardType: 'VISA', cardNumber: '', expirationDate: '', cvv: ''});
+      setShowNewCardForm(false);
+
+      alert('Payment card added successfully!');
+    } catch (error) {
+      console.error('Error adding payment card:', error);
+      let errorMessage = 'Failed to add payment card.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      alert(errorMessage);
+    } finally {
+      setSavingCard(false);
+    }
+  };
 
   // Fetch seats and restore booking state when showId is available
   useEffect(() => {
@@ -313,8 +426,24 @@ function BookingContent() {
     setSeats(seats.map(seat => ({ ...seat, isSelected: false })));
   };
 
-  const calculateTotal = () => {
+  // Calculate subtotal (tickets only)
+  const calculateSubtotal = () => {
     return tickets.reduce((total, ticket) => total + (ticket.price * ticket.quantity), 0);
+  };
+
+  // Calculate tax (7%)
+  const calculateTax = () => {
+    return calculateSubtotal() * 0.07;
+  };
+
+  // Calculate booking fee (5% of subtotal)
+  const calculateBookingFee = () => {
+    return calculateSubtotal() * 0.05;
+  };
+
+  // Calculate final total (subtotal + tax + booking fee)
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax() + calculateBookingFee();
   };
 
   const getSeatClassName = (seat: Seat) => {
@@ -375,34 +504,106 @@ function BookingContent() {
       return;
     }
 
+    // Validate payment method
+    if (isLoggedIn && paymentCards.length > 0 && !selectedCardId) {
+      alert('Please select a payment method.');
+      return;
+    }
+
+    if ((!isLoggedIn || paymentCards.length === 0 || showNewCardForm) && 
+        (!newCardData.cardNumber || !newCardData.expirationDate || !newCardData.cvv)) {
+      alert('Please enter complete payment card information.');
+      return;
+    }
+
+    // Basic card validation
+    if (newCardData.cardNumber && newCardData.cardNumber.replace(/\s/g, '').length < 13) {
+      alert('Please enter a valid card number.');
+      return;
+    }
+
+    if (newCardData.expirationDate && !/^\d{2}\/\d{2}$/.test(newCardData.expirationDate)) {
+      alert('Please enter expiry date in MM/YY format.');
+      return;
+    }
+
+    if (newCardData.cvv && (newCardData.cvv.length < 3 || newCardData.cvv.length > 4)) {
+      alert('Please enter a valid CVV.');
+      return;
+    }
+
     try {
-      // Get the dominant ticket category for the booking
-      const dominantCategory = tickets.reduce((prev, current) => 
-        (prev.quantity > current.quantity) ? prev : current
-      );
+      // Prepare payment information
+      let paymentInfo = {};
+      if (isLoggedIn && selectedCardId && paymentCards.length > 0) {
+        // Using saved card
+        paymentInfo = { 
+          payment_card_id: selectedCardId 
+        };
+      } else if (newCardData.cardNumber && newCardData.expirationDate && newCardData.cvv) {
+        // Using new card details
+        paymentInfo = {
+          card_type: newCardData.cardType,
+          card_number: newCardData.cardNumber.replace(/\s/g, ''),
+          expiration_date: newCardData.expirationDate,
+          cvv: newCardData.cvv
+        };
+      }
+      
+      // Create tickets array with seat assignments for backend
+      const ticketDataForAPI = [];
+      let seatIndex = 0;
+      
+      for (const ticket of tickets) {
+        for (let i = 0; i < ticket.quantity; i++) {
+          if (seatIndex < selectedSeats.length) {
+            ticketDataForAPI.push({
+              seat_id: selectedSeats[seatIndex].id,
+              ticket_category: ticket.category,
+              price: ticket.price
+            });
+            seatIndex++;
+          }
+        }
+      }
       
       // Reserve the seats in the database
       const reservationData = {
         user_id: userId,
         show_id: showId,
-        seat_ids: selectedSeats.map(seat => seat.id),
-        ticket_category: dominantCategory.category,
-        price: calculateTotal() / selectedSeats.length // Price per seat
+        tickets: ticketDataForAPI,
+        payment: paymentInfo
       };
+
+      console.log('Sending reservation request:', reservationData);
+      
       const result = await apiService.reserveSeats(reservationData);
+      
+      console.log('Reservation successful:', result);
+      
       // Clear booking state
       localStorage.removeItem('cinema_booking_state');
       
-      // Show success message and wait for user acknowledgment
-      alert(`🎉 Booking Confirmed Successfully!
-      Booking ID: ${result.booking_id}
-      Seats: ${selectedSeats.map(seat => seat.displayName).join(', ')}
-      Total: $${calculateTotal().toFixed(2)}
-
-      Your tickets have been reserved!`);
+      // Prepare order confirmation data
+      const orderParams = new URLSearchParams({
+        bookingId: result.booking_id,
+        movieTitle: movieTitle || movie?.title || 'Unknown Movie',
+        showDate: showDate || '',
+        showTime: showTime || '',
+        seats: selectedSeats.map(seat => seat.displayName).join(','),
+        subtotal: calculateSubtotal().toFixed(2),
+        tax: calculateTax().toFixed(2),
+        bookingFee: calculateBookingFee().toFixed(2),
+        total: calculateTotal().toFixed(2),
+        tickets: encodeURIComponent(JSON.stringify(tickets.map(ticket => ({
+          category: AGE_CATEGORIES.find(cat => cat.id === ticket.category)?.label || ticket.category,
+          quantity: ticket.quantity,
+          price: ticket.price
+        }))))
+      });
       
-      // Navigate after user dismisses alert
-      router.push('/');
+      // Navigate to order confirmation page
+      router.push(`/pages/order-confirmation?${orderParams.toString()}`);
       
     } catch (error) {
       console.error('Seat reservation failed:', error);
@@ -706,8 +907,218 @@ function BookingContent() {
             </div>
           </div>
 
-          {/* Order Summary */}
+          {/* Payment Method */}
           <div className="xl:col-span-1">
+            <div className="glass-card p-6 mb-6">
+              <h3 className="text-xl font-bold text-black mb-4 drop-shadow-lg">Payment Method</h3>
+              
+              {isLoggedIn ? (
+                <>
+                  {paymentCards.length > 0 ? (
+                    <div className="space-y-3 mb-4">
+                      {paymentCards.map((card) => (
+                        <div key={card.id} className="flex items-center space-x-3">
+                          <input
+                            type="radio"
+                            id={card.id}
+                            name="payment_method"
+                            checked={selectedCardId === card.id}
+                            onChange={() => setSelectedCardId(card.id)}
+                            className="w-4 h-4"
+                          />
+                          <label htmlFor={card.id} className="flex-1 cursor-pointer">
+                            <div className="p-3 border border-black/20 rounded-lg bg-white/20">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium text-black">
+                                  {card.card_type} ****{' '}
+                                  {/* Show last 4 digits if available in future */}
+                                </span>
+                                <span className="text-sm text-black/70">
+                                  Expires: {card.expiration_date}
+                                </span>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      ))}
+                      
+                      <button
+                        onClick={() => setShowNewCardForm(true)}
+                        className="w-full mt-3 p-3 border-2 border-dashed border-black/30 rounded-lg text-black hover:bg-white/10 transition-colors"
+                      >
+                        + Add New Card
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center mb-4">
+                      <p className="text-black/70 mb-3">No saved payment methods</p>
+                      <button
+                        onClick={() => setShowNewCardForm(true)}
+                        className="px-6 py-2 glass-button text-black rounded-lg border border-black/30"
+                      >
+                        Add Payment Method
+                      </button>
+                    </div>
+                  )}
+                  
+                  {showNewCardForm && (
+                    <div className="mt-4 p-4 border border-black/20 rounded-lg bg-white/10">
+                      <h4 className="font-semibold text-black mb-3">Add New Card</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm text-black mb-1">Card Type</label>
+                          <select
+                            value={newCardData.cardType}
+                            onChange={(e) => setNewCardData({...newCardData, cardType: e.target.value})}
+                            className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                          >
+                            <option value="VISA">Visa</option>
+                            <option value="MASTERCARD">Mastercard</option>
+                            <option value="AMEX">American Express</option>
+                            <option value="DISCOVER">Discover</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm text-black mb-1">Card Number</label>
+                          <input
+                            type="text"
+                            placeholder="1234 5678 9012 3456"
+                            value={newCardData.cardNumber}
+                            onChange={(e) => {
+                              // Format card number with spaces
+                              const value = e.target.value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+                              if (value.replace(/\s/g, '').length <= 16) {
+                                setNewCardData({...newCardData, cardNumber: value});
+                              }
+                            }}
+                            className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm text-black mb-1">Expiry Date</label>
+                            <input
+                              type="text"
+                              placeholder="MM/YY"
+                              value={newCardData.expirationDate}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '');
+                                if (value.length >= 2) {
+                                  value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                                }
+                                setNewCardData({...newCardData, expirationDate: value});
+                              }}
+                              className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-black mb-1">CVV</label>
+                            <input
+                              type="text"
+                              placeholder="123"
+                              value={newCardData.cvv}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').substring(0, 4);
+                                setNewCardData({...newCardData, cvv: value});
+                              }}
+                              className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex space-x-3 mt-4">
+                          <button
+                            onClick={handleAddNewCard}
+                            disabled={savingCard}
+                            className="flex-1 px-4 py-2 glass-button text-black rounded border border-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {savingCard ? 'Saving...' : 'Save Card'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowNewCardForm(false);
+                              setNewCardData({cardType: 'VISA', cardNumber: '', expirationDate: '', cvv: ''});
+                            }}
+                            className="px-4 py-2 border border-black/30 rounded text-black hover:bg-white/10"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center">
+                  <p className="text-black/70 mb-3">Please log in to view saved payment methods</p>
+                  <div className="p-4 border border-black/20 rounded-lg bg-white/10">
+                    <p className="text-sm text-black mb-3">Or enter payment details:</p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-black mb-1">Card Type</label>
+                        <select
+                          value={newCardData.cardType}
+                          onChange={(e) => setNewCardData({...newCardData, cardType: e.target.value})}
+                          className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                        >
+                          <option value="VISA">Visa</option>
+                          <option value="MASTERCARD">Mastercard</option>
+                          <option value="AMEX">American Express</option>
+                          <option value="DISCOVER">Discover</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-black mb-1">Card Number</label>
+                        <input
+                          type="text"
+                          placeholder="1234 5678 9012 3456"
+                          value={newCardData.cardNumber}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+                            if (value.replace(/\s/g, '').length <= 16) {
+                              setNewCardData({...newCardData, cardNumber: value});
+                            }
+                          }}
+                          className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm text-black mb-1">Expiry Date</label>
+                          <input
+                            type="text"
+                            placeholder="MM/YY"
+                            value={newCardData.expirationDate}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/\D/g, '');
+                              if (value.length >= 2) {
+                                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                              }
+                              setNewCardData({...newCardData, expirationDate: value});
+                            }}
+                            className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-black mb-1">CVV</label>
+                          <input
+                            type="text"
+                            placeholder="123"
+                            value={newCardData.cvv}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '').substring(0, 4);
+                              setNewCardData({...newCardData, cvv: value});
+                            }}
+                            className="w-full p-2 border border-black/20 rounded bg-white/80 text-black"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Order Summary */}
             <div className="glass-card p-6 sticky top-4">
               <h3 className="text-xl font-bold text-black mb-4 drop-shadow-lg">Order Summary</h3>
               
@@ -740,10 +1151,24 @@ function BookingContent() {
                   </div>
                 )}
                 
-                <div className="border-t border-white/30 pt-3">
-                  <div className="flex justify-between text-lg font-bold text-black">
-                    <span>Total:</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
+                <div className="border-t border-white/30 pt-3 space-y-2">
+                  <div className="flex justify-between text-sm text-black/80">
+                    <span>Subtotal:</span>
+                    <span>${calculateSubtotal().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-black/80">
+                    <span>Tax (7%):</span>
+                    <span>${calculateTax().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-black/80">
+                    <span>Booking Fee (5%):</span>
+                    <span>${calculateBookingFee().toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-black/20 pt-2">
+                    <div className="flex justify-between text-lg font-bold text-black">
+                      <span>Total:</span>
+                      <span>${calculateTotal().toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
