@@ -230,8 +230,6 @@ exports.reserveSeats = async (req, res) => {
         return res.status(400).json({ message: "Invalid payment card selected" });
       }
     } else if (payment && payment.card_number && payment.expiration_date && payment.cvv) {
-      // For new card details, we could optionally save it for logged in users
-      // For now, we'll just use it for this transaction (card details not stored)
       console.log('Processing payment with new card details (not stored)');
     }
 
