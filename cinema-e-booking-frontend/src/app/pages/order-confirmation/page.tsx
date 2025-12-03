@@ -10,6 +10,7 @@ interface OrderDetails {
   showTime: string;
   seats: string[];
   subtotal: number;
+  discount?: number;
   tax: number;
   bookingFee: number;
   total: number;
@@ -34,6 +35,7 @@ function OrderConfirmationContent() {
     const showTime = searchParams.get('showTime');
     const seats = searchParams.get('seats')?.split(',') || [];
     const subtotal = parseFloat(searchParams.get('subtotal') || '0');
+    const discount = parseFloat(searchParams.get('discount') || '0');
     const tax = parseFloat(searchParams.get('tax') || '0');
     const bookingFee = parseFloat(searchParams.get('bookingFee') || '0');
     const total = parseFloat(searchParams.get('total') || '0');
@@ -49,6 +51,7 @@ function OrderConfirmationContent() {
         showTime: showTime || '',
         seats,
         subtotal,
+        discount,
         tax,
         bookingFee,
         total,
@@ -170,6 +173,18 @@ function OrderConfirmationContent() {
                 <span className="text-black/70">Subtotal:</span>
                 <span className="text-black">${orderDetails.subtotal.toFixed(2)}</span>
               </div>
+              {orderDetails.discount && orderDetails.discount > 0 && (
+                <div className="flex justify-between text-sm text-green-800">
+                  <span className="">Discount:</span>
+                  <span className="">-${orderDetails.discount.toFixed(2)}</span>
+                </div>
+              )}
+              {orderDetails.discount && orderDetails.discount > 0 ? (
+                <div className="flex justify-between text-sm font-semibold">
+                  <span className="text-black/80">Subtotal after discount:</span>
+                  <span className="text-black">${(orderDetails.subtotal - orderDetails.discount).toFixed(2)}</span>
+                </div>
+              ) : null}
               <div className="flex justify-between text-sm">
                 <span className="text-black/70">Tax (7%):</span>
                 <span className="text-black">${orderDetails.tax.toFixed(2)}</span>

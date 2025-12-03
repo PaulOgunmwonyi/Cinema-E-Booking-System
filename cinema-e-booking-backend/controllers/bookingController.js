@@ -166,10 +166,7 @@ exports.reserveSeats = async (req, res) => {
       booking_fee = parseFloat(feeRow[0].fee);
     }
 
-    // Tax
-    const TAX_RATE = 7.0 / 100;
-    const tax_amount = parseFloat((subtotal * TAX_RATE).toFixed(2));
-
+    // Prepare for discount & tax calculation
     let discount_amount = 0;
     let promotion_id = null;
 
@@ -229,8 +226,13 @@ exports.reserveSeats = async (req, res) => {
 
     discount_amount = parseFloat(discount_amount.toFixed(2));
 
+    // Apply discount before tax: subtract discount from subtotal, then compute tax on the discounted subtotal
+    const TAX_RATE = 7.0 / 100;
+    const discounted_subtotal = parseFloat(Math.max(0, subtotal - discount_amount).toFixed(2));
+    const tax_amount = parseFloat((discounted_subtotal * TAX_RATE).toFixed(2));
+
     const total_amount = parseFloat(
-      (subtotal + tax_amount + booking_fee - discount_amount).toFixed(2)
+      (discounted_subtotal + tax_amount + booking_fee).toFixed(2)
     );
 
     // Handle payment information
