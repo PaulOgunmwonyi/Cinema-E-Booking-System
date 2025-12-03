@@ -58,12 +58,12 @@ function MovieGrid({
               alt={movie.title}
               className="w-full aspect-[2/3] object-cover rounded-t-lg transition-transform group-hover:scale-105"
             />
-            <h3 className="text-lg font-bold text-uga-white mt-2 text-center">
+            <h3 className="text-lg font-bold text-black mt-2 text-center">
               {movie.title}
             </h3>
             <div className="flex flex-col items-center gap-2 pb-4">
               {showRating ? (
-                <span className="bg-uga-red/80 text-uga-white px-3 py-1 rounded-full text-sm font-bold mt-2">
+                <span className="bg-black text-white px-3 py-1 rounded-full text-sm font-bold mt-2">
                   {movie.mpaa_rating || 'Not Yet Rated'}
                 </span>
               ) : (
@@ -73,7 +73,7 @@ function MovieGrid({
               )}
               {movie.trailer_url && (
                 <button
-                  className="glass-button px-4 py-2 text-uga-white font-medium rounded hover:scale-105 transition-transform duration-200"
+                  className="glass-button px-4 py-2 text-black font-medium rounded hover:scale-105 transition-transform duration-200"
                   onClick={() => setTrailerUrl(movie.trailer_url!)}
                 >
                   Watch Trailer
@@ -185,7 +185,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 text-uga-white">
+      <div className="container mx-auto px-4 py-8 text-black">
         Loading movies...
       </div>
     );
@@ -193,7 +193,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-uga-white mb-8 text-center drop-shadow-lg">
+      <h1 className="text-4xl font-bold text-black mb-8 text-center drop-shadow-lg">
         Welcome to Cinema E-Booking
       </h1>
 
@@ -226,12 +226,12 @@ export default function Home() {
       )}
 
       <section className="mb-12">
-        <h2 className="text-2xl font-bold text-uga-white mb-4">Now Playing</h2>
+        <h2 className="text-2xl font-bold text-black mb-4">Now Playing</h2>
         <MovieGrid movies={nowPlaying} showRating={true} />
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold text-uga-white mb-4">Coming Soon</h2>
+        <h2 className="text-2xl font-bold text-black mb-4">Coming Soon</h2>
         <MovieGrid movies={comingSoon} showRating={false} comingSoon={true} />
       </section>
     </div>

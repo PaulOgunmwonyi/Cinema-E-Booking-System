@@ -54,6 +54,7 @@ export default function EditProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -147,12 +148,25 @@ export default function EditProfilePage() {
       setCurrentPassword(value);
       if (newPassword && value === newPassword) {
         setPasswordError('New password cannot be the same as current password.');
+      } else if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+        setPasswordError('New passwords do not match.');
       } else {
         setPasswordError(null);
       }
     } else if (name === 'newPassword') {
       setNewPassword(value);
       if (currentPassword && value === currentPassword) {
+        setPasswordError('New password cannot be the same as current password.');
+      } else if (confirmPassword && value !== confirmPassword) {
+        setPasswordError('New passwords do not match.');
+      } else {
+        setPasswordError(null);
+      }
+    } else if (name === 'confirmPassword') {
+      setConfirmPassword(value);
+      if (newPassword && value !== newPassword) {
+        setPasswordError('New passwords do not match.');
+      } else if (currentPassword && newPassword === currentPassword) {
         setPasswordError('New password cannot be the same as current password.');
       } else {
         setPasswordError(null);
@@ -167,13 +181,17 @@ export default function EditProfilePage() {
     if (!form.lastName.trim()) newErrors.lastName = 'Last name is required';
 
     // Password validation
-    if (newPassword) {
+    if (newPassword || confirmPassword) {
       if (!currentPassword) {
         setPasswordError('Please enter your current password.');
         return false;
       }
       if (currentPassword === newPassword) {
         setPasswordError('New password cannot be the same as current password.');
+        return false;
+      }
+      if (newPassword !== confirmPassword) {
+        setPasswordError('New passwords do not match.');
         return false;
       }
     }
@@ -410,24 +428,35 @@ export default function EditProfilePage() {
             {/* Password */}
             <div>
               <label className="block text-white font-medium mb-2">Change Password</label>
-              <input
-                type="password"
-                name="currentPassword"
-                value={currentPassword}
-                onChange={handlePasswordChange}
-                className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 mb-2"
-                placeholder="Current password"
-                autoComplete="current-password"
-              />
-              <input
-                type="password"
-                name="newPassword"
-                value={newPassword}
-                onChange={handlePasswordChange}
-                className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
-                placeholder="New password"
-                autoComplete="new-password"
-              />
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  name="currentPassword"
+                  value={currentPassword}
+                  onChange={handlePasswordChange}
+                  className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  placeholder="Current password"
+                  autoComplete="current-password"
+                />
+                <input
+                  type="password"
+                  name="newPassword"
+                  value={newPassword}
+                  onChange={handlePasswordChange}
+                  className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  placeholder="New password"
+                  autoComplete="new-password"
+                />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={handlePasswordChange}
+                  className="glass-input w-full px-4 py-3 rounded-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  placeholder="Confirm new password"
+                  autoComplete="new-password"
+                />
+              </div>
               <p className="text-white/50 text-xs mt-1">
                 Enter your current password and a new password to change it.
               </p>
