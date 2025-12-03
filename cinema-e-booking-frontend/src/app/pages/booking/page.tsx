@@ -1249,7 +1249,9 @@ function BookingContent() {
                     <span>${displayTax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-black/80">
-                    <span>Booking Fee (5%):</span>
+                    <span>
+                      {subtotal > 0 ? `Booking Fee (${((displayBookingFee / subtotal) * 100).toFixed(2)}%)` : 'Booking Fee'}:
+                    </span>
                     <span>${displayBookingFee.toFixed(2)}</span>
                   </div>
                   <div className="border-t border-black/20 pt-2">

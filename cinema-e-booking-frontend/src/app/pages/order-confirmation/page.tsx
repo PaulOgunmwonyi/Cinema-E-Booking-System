@@ -190,7 +190,9 @@ function OrderConfirmationContent() {
                 <span className="text-black">${orderDetails.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-black/70">Booking Fee (5%):</span>
+                <span className="text-black/70">
+                  {orderDetails.subtotal > 0 ? `Booking Fee (${((orderDetails.bookingFee / orderDetails.subtotal) * 100).toFixed(2)}%)` : 'Booking Fee'}:
+                </span>
                 <span className="text-black">${orderDetails.bookingFee.toFixed(2)}</span>
               </div>
               <div className="border-t border-black/20 pt-2">
