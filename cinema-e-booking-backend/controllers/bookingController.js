@@ -155,14 +155,9 @@ exports.reserveSeats = async (req, res) => {
 
     const subtotal = tickets.reduce((sum, t) => sum + parseFloat(t.price), 0);
 
-    let booking_fee = 0;
-    const feeRow = await db.sequelize.query(
-      `SELECT fee FROM booking_fees ORDER BY created_at DESC LIMIT 1`,
-      { type: db.Sequelize.QueryTypes.SELECT, transaction: t }
-    );
-    if (feeRow.length > 0) {
-      booking_fee = parseFloat(feeRow[0].fee);
-    }
+    // Calculate booking fee as 5% of subtotal
+    const BOOKING_FEE_RATE = 5.0 / 100;
+    const booking_fee = parseFloat((subtotal * BOOKING_FEE_RATE).toFixed(2));
 
     // Tax
     const TAX_RATE = 7.0 / 100;
