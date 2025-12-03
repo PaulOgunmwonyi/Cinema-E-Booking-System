@@ -91,7 +91,6 @@ const Header = () => {
   };
 
   // Admin login handler (no logout here)
-  // Admin login handler (no logout here)
   const handleAdminButton = () => {
     const userIsAdmin = !!(user && (user.role === 'admin' || (user as any).is_admin === true));
     const isAdminSession = isAdmin;
@@ -167,6 +166,16 @@ const Header = () => {
                   </svg>
                 </button>
               </form>
+
+              {/* Show Order History button if logged in */}
+              {isLoggedIn && (
+                <Link
+                  href="/pages/order-history"
+                  className="glass-button px-6 py-2 rounded-full font-bold text-white hover:text-gray-200 shadow-lg"
+                >
+                  Order History
+                </Link>
+              )}
 
               {/* Show Edit Profile button if logged in */}
               {isLoggedIn && (
