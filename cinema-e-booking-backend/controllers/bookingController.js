@@ -157,27 +157,14 @@ exports.reserveSeats = async (req, res) => {
 
     const subtotal = tickets.reduce((sum, t) => sum + parseFloat(t.price), 0);
 
-    // booking_fees.fee may be stored as a percentage (e.g. 5.00 for 5%)
-    // or as a decimal (e.g. 0.05 for 5%). Support both storage formats.
-    let booking_fee = 0; // monetary amount (in dollars) to add to the order
-    let storedFee = 0; // raw value stored in booking_fees table
-    const feeRow = await db.sequelize.query(
-      `SELECT fee FROM booking_fees ORDER BY created_at DESC LIMIT 1`,
-      { type: db.Sequelize.QueryTypes.SELECT, transaction: t }
-    );
-    if (feeRow.length > 0) {
-      storedFee = parseFloat(feeRow[0].fee);
-      // If storedFee looks like a percentage (>= 1), treat it as percent points
-      // e.g. 5.00 => 5% => 0.05
-      if (storedFee >= 1) {
-        booking_fee = parseFloat((subtotal * (storedFee / 100)).toFixed(2));
-      } else {
-        // stored as decimal fraction like 0.05
-        booking_fee = parseFloat((subtotal * storedFee).toFixed(2));
-      }
-    }
+    // Calculate booking fee as 5% of subtotal
+    const BOOKING_FEE_RATE = 5.0 / 100;
+    const booking_fee = parseFloat((subtotal * BOOKING_FEE_RATE).toFixed(2));
 
-    // Prepare for discount & tax calculation
+    // Tax
+    const TAX_RATE = 7.0 / 100;
+    const tax_amount = parseFloat((subtotal * TAX_RATE).toFixed(2));
+
     let discount_amount = 0;
     let promotion_id = null;
 
