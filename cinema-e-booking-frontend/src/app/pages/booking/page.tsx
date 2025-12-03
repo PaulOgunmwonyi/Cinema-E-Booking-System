@@ -454,6 +454,14 @@ function BookingContent() {
     return calculateSubtotal() + calculateTax() + calculateBookingFee();
   };
 
+  // Display values that account for applied promo (client-side estimate)
+  const subtotal = calculateSubtotal();
+  const displayDiscount = promoValidation && promoValidation.valid && promoValidation.discountAmount ? promoValidation.discountAmount : 0;
+  const discountedSubtotal = Math.max(0, subtotal - displayDiscount);
+  const displayTax = discountedSubtotal * 0.07;
+  const displayBookingFee = calculateBookingFee();
+  const displayTotal = discountedSubtotal + displayTax + displayBookingFee;
+
   const getSeatClassName = (seat: Seat) => {
     if (!seat.is_available) {
       return 'bg-red-500 cursor-not-allowed';
@@ -1222,20 +1230,32 @@ function BookingContent() {
                 )}
                   <div className="flex justify-between text-sm text-black/80">
                     <span>Subtotal:</span>
-                    <span>${calculateSubtotal().toFixed(2)}</span>
+                    <span>${subtotal.toFixed(2)}</span>
                   </div>
+                  {displayDiscount > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span>Discount:</span>
+                        <span className="text-green-800">- ${displayDiscount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-black/80">
+                        <span>Subtotal after discount:</span>
+                        <span>${discountedSubtotal.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between text-sm text-black/80">
                     <span>Tax (7%):</span>
-                    <span>${calculateTax().toFixed(2)}</span>
+                    <span>${displayTax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-black/80">
                     <span>Booking Fee (5%):</span>
-                    <span>${calculateBookingFee().toFixed(2)}</span>
+                    <span>${displayBookingFee.toFixed(2)}</span>
                   </div>
                   <div className="border-t border-black/20 pt-2">
                     <div className="flex justify-between text-lg font-bold text-black">
                       <span>Total:</span>
-                      <span>${calculateTotal().toFixed(2)}</span>
+                      <span>${displayTotal.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
