@@ -42,6 +42,8 @@ const generateSeatsForShow = async (showId, showroomId) => {
   }
 };
 
+
+
 exports.fetchAvailableSeats = async (req, res) => {
   try {
     const show_id = req.params.show_id.trim();
@@ -191,6 +193,29 @@ exports.reserveSeats = async (req, res) => {
 
       const promo = promos[0];
       promotion_id = promo.id;
+
+      // Verify user opted in to promotions (promo_opt_in = true)
+      const userRow = await db.sequelize.query(
+        `SELECT email, first_name, promo_opt_in FROM users WHERE id = $1`,
+        {
+          bind: [user_id],
+          type: db.Sequelize.QueryTypes.SELECT,
+          transaction: t
+        }
+      );
+
+      if (userRow.length === 0) {
+        await t.rollback();
+        return res.status(400).json({ message: 'Invalid user for promo validation' });
+      }
+
+      const userEmail = userRow[0].email;
+      const promoOptIn = !!userRow[0].promo_opt_in;
+
+      if (!promoOptIn) {
+        await t.rollback();
+        return res.status(403).json({ message: 'User not opted in for promotions' });
+      }
 
       if (promo.discount_percent) {
         discount_amount += subtotal * (promo.discount_percent / 100);
@@ -405,6 +430,74 @@ exports.getBookingDetails = async (req, res) => {
     return res
       .status(500)
       .json({ message: 'Server error fetching booking details' });
+  }
+};
+
+// Validate a promotion code for the logged-in user (quick check for UI)
+exports.validatePromo = async (req, res) => {
+  try {
+    const user = req.user;
+    const { promotion_code, subtotal } = req.body;
+
+    console.log('validatePromo called by:', user && user.email ? user.email : 'unknown', 'body:', { promotion_code, subtotal });
+
+    if (!user || !user.email) return res.status(401).json({ message: 'Unauthorized' });
+    if (!promotion_code || promotion_code.trim() === '') return res.status(422).json({ message: 'promotion_code is required' });
+
+    const promos = await db.sequelize.query(
+      `SELECT id, discount_percent, discount_amount, code
+       FROM promotions
+       WHERE code = $1
+         AND CURRENT_DATE BETWEEN start_date AND end_date`,
+      {
+        bind: [promotion_code.trim()],
+        type: db.Sequelize.QueryTypes.SELECT
+      }
+    );
+
+    if (promos.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired promo code' });
+    }
+
+    const promo = promos[0];
+    // Check that the logged-in user has opted in to promotions
+    const userRows = await db.sequelize.query(
+      `SELECT promo_opt_in FROM users WHERE id = $1`,
+      { bind: [user.id], type: db.Sequelize.QueryTypes.SELECT }
+    );
+
+    if (!userRows || userRows.length === 0) {
+      return res.status(400).json({ message: 'Invalid user for promo validation' });
+    }
+
+    const promoOptIn = !!userRows[0].promo_opt_in;
+    if (!promoOptIn) {
+      return res.status(403).json({ message: 'User not opted in for promotions' });
+    }
+
+    // Calculate discount if subtotal provided, otherwise return promo details
+    let discount_amount = null;
+    if (typeof subtotal === 'number') {
+      discount_amount = 0;
+      if (promo.discount_percent) discount_amount += subtotal * (parseFloat(promo.discount_percent) / 100);
+      if (promo.discount_amount) discount_amount += parseFloat(promo.discount_amount);
+      if (discount_amount > subtotal) discount_amount = subtotal;
+      discount_amount = parseFloat(discount_amount.toFixed(2));
+    }
+
+    return res.json({
+      promotion: {
+        id: promo.id,
+        code: promo.code,
+        discount_percent: promo.discount_percent ? parseFloat(promo.discount_percent) : null,
+        discount_amount: promo.discount_amount ? parseFloat(promo.discount_amount) : null
+      },
+      discount_amount
+    });
+  } catch (err) {
+    console.error('validatePromo error:', err);
+    const msg = err && err.message ? err.message : 'Server error validating promo';
+    return res.status(500).json({ message: msg });
   }
 };
 

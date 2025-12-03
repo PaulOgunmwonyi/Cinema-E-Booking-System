@@ -410,6 +410,13 @@ class ApiService {
       body: JSON.stringify(bookingData),
     }, true);
   }
+
+  async validatePromo(promotionCode: string, subtotal?: number): Promise<{ promotion: Promotion; discount_amount?: number }> {
+    return this.fetchApi<{ promotion: Promotion; discount_amount?: number }>('/api/bookings/validate-promo', {
+      method: 'POST',
+      body: JSON.stringify({ promotion_code: promotionCode, subtotal }),
+    }, true);
+  }
 }
 
 export const apiService = new ApiService();

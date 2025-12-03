@@ -15,6 +15,10 @@ router.get('/seats/:show_id', fetchAvailableSeats);
 // checkout + payment, creates booking and sends confirmation email
 router.post('/reserve', reserveSeats);
 
+// Validate a promo code for the logged-in user (used by frontend Apply button)
+const { validatePromo } = require('../controllers/bookingController');
+router.post('/validate-promo', authMiddleware, validatePromo);
+
 //order history for the logged-in user
 router.get('/history', authMiddleware, getOrderHistory);
 

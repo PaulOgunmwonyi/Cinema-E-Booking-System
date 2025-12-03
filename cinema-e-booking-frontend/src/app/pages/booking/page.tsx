@@ -66,6 +66,14 @@ function BookingContent() {
     expirationDate: '',
     cvv: ''
   });
+  const [promoCode, setPromoCode] = useState<string>('');
+  const [promoValidation, setPromoValidation] = useState<{ valid: boolean; discountAmount: number | null; discountPercent?: number | null; message?: string } | null>(null);
+  const [applyingPromo, setApplyingPromo] = useState<boolean>(false);
+
+  // Clear promo validation when user edits the code
+  useEffect(() => {
+    setPromoValidation(null);
+  }, [promoCode]);
   const [savingCard, setSavingCard] = useState<boolean>(false);
   const hasRestoredState = useRef(false);
   const hasLoadedSeats = useRef(false);
@@ -574,6 +582,9 @@ function BookingContent() {
         tickets: ticketDataForAPI,
         payment: paymentInfo
       };
+      if (promoCode && promoCode.trim() !== '') {
+        (reservationData as any).promotion_code = promoCode.trim();
+      }
 
       console.log('Sending reservation request:', reservationData);
       
@@ -583,7 +594,14 @@ function BookingContent() {
       
       // Clear booking state
       localStorage.removeItem('cinema_booking_state');
-      
+
+      // Use server-provided totals (discounts/total) when available
+      const subtotalServer = (result.subtotal ?? calculateSubtotal()).toFixed(2);
+      const taxServer = (result.tax_amount ?? calculateTax()).toFixed(2);
+      const bookingFeeServer = (result.booking_fee ?? calculateBookingFee()).toFixed(2);
+      const discountServer = (result.discount_amount ?? 0).toFixed(2);
+      const totalServer = (result.total_amount ?? calculateTotal()).toFixed(2);
+
       // Prepare order confirmation data
       const orderParams = new URLSearchParams({
         bookingId: result.booking_id,
@@ -591,10 +609,11 @@ function BookingContent() {
         showDate: showDate || '',
         showTime: showTime || '',
         seats: selectedSeats.map(seat => seat.displayName).join(','),
-        subtotal: calculateSubtotal().toFixed(2),
-        tax: calculateTax().toFixed(2),
-        bookingFee: calculateBookingFee().toFixed(2),
-        total: calculateTotal().toFixed(2),
+        subtotal: subtotalServer,
+        tax: taxServer,
+        bookingFee: bookingFeeServer,
+        discount: discountServer,
+        total: totalServer,
         tickets: encodeURIComponent(JSON.stringify(tickets.map(ticket => ({
           category: AGE_CATEGORIES.find(cat => cat.id === ticket.category)?.label || ticket.category,
           quantity: ticket.quantity,
@@ -1152,6 +1171,55 @@ function BookingContent() {
                 )}
                 
                 <div className="border-t border-white/30 pt-3 space-y-2">
+                {/* Promo code input */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-black/90 mb-2">Promotion Code</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      className="flex-1 glass-input px-3 py-2 rounded-lg text-black"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!promoCode || promoCode.trim() === '') {
+                          setPromoValidation({ valid: false, discountAmount: null, message: 'Enter a promo code to apply' });
+                          return;
+                        }
+                        setApplyingPromo(true);
+                        try {
+                          const resp = await apiService.validatePromo(promoCode.trim(), calculateSubtotal());
+                          const discount = resp.discount_amount ?? null;
+                          setPromoValidation({ valid: true, discountAmount: discount, discountPercent: resp.promotion?.discount_percent ?? null, message: 'Promo applied' });
+                        } catch (err) {
+                          console.error('Promo validation failed:', err);
+                          let msg = 'Failed to validate promo';
+                          if (err instanceof Error) msg = err.message;
+                          setPromoValidation({ valid: false, discountAmount: null, message: msg });
+                        } finally {
+                          setApplyingPromo(false);
+                        }
+                      }}
+                      className="px-3 py-2 bg-uga-red/60 text-black rounded-lg"
+                      disabled={applyingPromo}
+                    >{applyingPromo ? 'Checking...' : 'Apply'}</button>
+                  </div>
+                </div>
+                {promoValidation && (
+                  <div className="mt-2 text-sm">
+                    {promoValidation.valid ? (
+                      promoValidation.discountAmount !== null ? (
+                        <div className="text-green-800">Estimated discount: ${promoValidation.discountAmount.toFixed(2)}</div>
+                      ) : (
+                        <div className="text-green-800">{promoValidation.message || 'Promo applied'}</div>
+                      )
+                    ) : (
+                      <div className="text-red-700">{promoValidation.message || 'Invalid promo'}</div>
+                    )}
+                  </div>
+                )}
                   <div className="flex justify-between text-sm text-black/80">
                     <span>Subtotal:</span>
                     <span>${calculateSubtotal().toFixed(2)}</span>

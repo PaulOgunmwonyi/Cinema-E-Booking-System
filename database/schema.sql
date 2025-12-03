@@ -199,6 +199,17 @@ CREATE TABLE promotions (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Promotion email audit / send log
+CREATE TABLE promotion_emails (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  promotion_id UUID NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+  user_email VARCHAR(255) NOT NULL,
+  user_first_name VARCHAR(120),
+  status TEXT NOT NULL CHECK (status IN ('sent','failed')),
+  error_message TEXT,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Hall seats (seat mapping template for showrooms)
 CREATE TABLE hall_seats (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
