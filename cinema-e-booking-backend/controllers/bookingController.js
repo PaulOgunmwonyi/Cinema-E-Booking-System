@@ -314,6 +314,46 @@ exports.reserveSeats = async (req, res) => {
       }
     );
 
+      // Attempt to send order confirmation email (best-effort; do not block booking)
+      (async () => {
+        try {
+          // Fetch user info
+          const userRows = await db.sequelize.query(
+            `SELECT first_name, email FROM users WHERE id = $1`,
+            { bind: [user_id], type: db.Sequelize.QueryTypes.SELECT }
+          );
+          const userInfo = userRows && userRows.length ? userRows[0] : null;
+
+          // Build seat list from tickets
+          const seatLabels = tickets.map(tkt => {
+            const s = seats.find(ss => ss.id === tkt.seat_id);
+            return s ? `${s.row_label}${s.seat_number}` : tkt.seat_id;
+          });
+
+          const frontendBase = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+          const confirmationLink = `${frontendBase}/pages/order-confirmation?bookingId=${booking_id}`;
+
+          const html = `
+            <h2>Thank you for your booking${userInfo && userInfo.first_name ? ', ' + userInfo.first_name : ''}!</h2>
+            <p>Your booking <strong>#${bookingNumRow[0].booking_number}</strong> has been confirmed.</p>
+            <p><strong>Seats:</strong> ${seatLabels.join(', ')}</p>
+            <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
+            <p><strong>Discount:</strong> $${discount_amount.toFixed(2)}</p>
+            <p><strong>Tax:</strong> $${tax_amount.toFixed(2)}</p>
+            <p><strong>Booking Fee:</strong> $${booking_fee.toFixed(2)}</p>
+            <p><strong>Total Paid:</strong> $${total_amount.toFixed(2)}</p>
+            <p>You can view your full order details here: <a href="${confirmationLink}">View Order</a></p>
+            <p>We look forward to seeing you at the cinema!</p>
+          `;
+
+          if (userInfo && userInfo.email) {
+            await sendEmail({ to: userInfo.email, subject: 'Your Cinema E-Booking Confirmation', html });
+          }
+        } catch (emailErr) {
+          console.error('Failed to send booking confirmation email:', emailErr);
+        }
+      })();
+
     return res.status(201).json({
       message: "Booking confirmed",
       booking_id,
