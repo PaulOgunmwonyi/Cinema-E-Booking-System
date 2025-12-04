@@ -147,6 +147,20 @@ export default function MovieDetails({ params }: { params: Promise<{ id: string 
             )}
           </div>
           <p className="mb-4">{movie.synopsis}</p>
+          {(movie.director || movie.producer) && (
+            <div className="mb-4 text-sm text-uga-white/90">
+              {movie.director && (
+                <p>
+                  <strong>Director:</strong> {movie.director}
+                </p>
+              )}
+              {movie.producer && (
+                <p>
+                  <strong>Producer:</strong> {movie.producer}
+                </p>
+              )}
+            </div>
+          )}
           <div className="mb-4">
             <h3 className="font-semibold mb-1">Available Dates:</h3>
             <div className="flex flex-wrap gap-2 mb-2">
