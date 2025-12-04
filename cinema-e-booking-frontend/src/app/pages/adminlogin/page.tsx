@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiService } from '../../utils/api';
+import { useUser } from '../../contexts/UserContext';
 
 const AdminLoginPage = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ const AdminLoginPage = () => {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { login } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,14 +31,30 @@ const AdminLoginPage = () => {
     setIsSubmitting(true);
     try {
       const res = await apiService.adminLogin({ email, password });
-      // Set admin session and save refresh token
+
+      // Persist tokens to localStorage so app-wide auth works
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('isAdmin', '1');
-        if (res.refreshToken) {
-          sessionStorage.setItem('refreshToken', res.refreshToken);
-        }
-        window.dispatchEvent(new Event('storage'));
+        const tokens = { accessToken: res.accessToken, refreshToken: res.refreshToken };
+        localStorage.setItem('cinema_tokens', JSON.stringify(tokens));
       }
+
+      // Fetch profile now that tokens are available and update UserContext
+      try {
+        const profile = await apiService.getProfile();
+        const u = profile.user;
+        const userData = {
+          id: u.id,
+          email: u.email,
+          firstName: u.first_name,
+          lastName: u.last_name,
+          is_admin: true,
+        };
+        login(userData, { accessToken: res.accessToken, refreshToken: res.refreshToken });
+      } catch (profileErr) {
+        console.warn('Admin logged in but failed to fetch profile:', profileErr);
+        // still proceed to admin area; tokens are saved
+      }
+
       router.push('/pages/admin');
     } catch (err: any) {
       setError(err?.message || 'Admin login failed');
