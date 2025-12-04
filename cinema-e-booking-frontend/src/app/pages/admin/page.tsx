@@ -9,13 +9,14 @@ const AdminHomePage = () => {
   const [menu, setMenu] = useState<AdminMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { user, isLoggedIn } = useUser();
+  const { user, isLoggedIn, logout } = useUser();
 
   useEffect(() => {
     // Gate admin page: allow either a sessionStorage admin flag (admin login flow)
     // or a logged-in user with role 'admin'. Otherwise redirect to admin login.
     const isAdminSession = typeof window !== "undefined" && sessionStorage.getItem("isAdmin") === "1";
-    if (!isAdminSession && user?.role !== "admin") {
+    const userIsAdmin = !!(user && (user.role === 'admin' || (user as any).is_admin === true));
+    if (!isAdminSession && !userIsAdmin) {
       router.push("/pages/adminlogin");
       return;
     }
@@ -32,7 +33,8 @@ const AdminHomePage = () => {
   // Admin logout handler
   const handleLogout = async () => {
     if (typeof window !== "undefined") {
-      const refreshToken = sessionStorage.getItem("refreshToken");
+      // Invalidate server refresh token if present (sessionStorage kept for legacy flows)
+      const refreshToken = sessionStorage.getItem("refreshToken") || (localStorage.getItem('cinema_tokens') ? JSON.parse(localStorage.getItem('cinema_tokens') as string).refreshToken : null);
       if (refreshToken) {
         try {
           await apiService.fetchApi('/api/logout', {
@@ -41,12 +43,19 @@ const AdminHomePage = () => {
             headers: { 'Content-Type': 'application/json' },
           });
         } catch (e) {
-          // Optionally handle error
+          // ignore errors during logout
         }
-        sessionStorage.removeItem("refreshToken");
       }
+
+      // Clear both legacy sessionStorage and app localStorage tokens/user
+      sessionStorage.removeItem("refreshToken");
       sessionStorage.removeItem("isAdmin");
-      window.dispatchEvent(new Event("storage")); // <-- Add this line!
+      try { localStorage.removeItem('cinema_tokens'); } catch {}
+      try { localStorage.removeItem('cinema_user'); } catch {}
+      // Update UserContext
+      try { logout(); } catch {}
+
+      window.dispatchEvent(new Event("storage"));
     }
     router.push("/");
   };
